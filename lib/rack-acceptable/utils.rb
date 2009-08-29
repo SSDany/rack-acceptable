@@ -157,6 +157,10 @@ module Rack #:nodoc:
       # Float:: The quality factor (relative strength of the MIME-Type).
       #
       def qualify_mime_type(type, subtype, params, *types)
+        weight_mime_type(type, subtype, params, *types).first
+      end
+
+      def weight_mime_type(type, subtype, params, *types)
 
         rate = 0
         specificity = -1
@@ -198,11 +202,31 @@ module Rack #:nodoc:
           specificity, rate, quality = sp, r, q
         end
 
-        quality
+        return quality, rate, specificity
       end
 
+      # ==== Parameters
+      # provides<Array>:: The Array of available MIME-Types (snippets). Could be empty.
+      # accepts<String>:: The Array of Acceptable MIME-Types. Could be empty.
+      #
+      # ==== Returns
+      # String:: The best one of provides.
+      #
       def detect_best_mime_type(provides, accepts)
-        raise NotImplementedError
+        return nil if provides.empty?
+        return provides.first if accepts.empty?
+
+        accepts = accepts.sort_by { |t| -t.at(2) }
+        candidate = provides.map { |snippet|
+          type, subtype, _, params, _ = parse_mime_type(snippet)
+          weight_mime_type(type, subtype, params, *accepts) << snippet
+        }.max_by { |t| t[0..2] } #instead of #sort
+
+        candidate.at(0) == 0 ? nil : candidate.at(3)
+      end
+
+      def blank?(s)
+        s.empty? || s.strip.empty?
       end
 
     end
