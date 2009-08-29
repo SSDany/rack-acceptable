@@ -7,7 +7,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'lib/mime_parse.rb'))
 SNIPPETS = []
 SNIPPETS << "text/html"
 SNIPPETS << "text/html;level=1;q=0.5"
-SNIPPETS << "text/html;level=1;q=0.5;a=42"
+SNIPPETS << "text/html;level=2;q=0.5;a=42"
 
 RBench.run(ARGV[0] ? ARGV[0].to_i : 100_000) do
 
@@ -19,7 +19,7 @@ RBench.run(ARGV[0] ? ARGV[0].to_i : 100_000) do
 
   group "Parsing standalone MIME-Type snippet" do
     SNIPPETS.each do |snippet|
-      report "#{snippet}" do
+      report "snippet to parse: #{snippet.inspect}" do
         origin    { ::MIMEParse::parse_mime_type snippet }
         alternate { ::Rack::Acceptable::Utils::parse_mime_type snippet }
       end
