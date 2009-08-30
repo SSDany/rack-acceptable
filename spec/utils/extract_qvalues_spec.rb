@@ -28,7 +28,7 @@ describe Rack::Acceptable::Utils, ".extract_qvalues" do
       qvalue_at('compress;q=0.').should    == 0.000
     end
 
-    it "but raises an ArgumentError when the quality factor is malformed" do
+    it "raises an ArgumentError when the quality factor is malformed" do
       malformed = ["42", "bogus", "", ".3", "-0.4", "1/3", "0.3333", "1.01", "2.22"]
       malformed.each do |qvalue|
         snippet = "compress;q=#{qvalue}"

@@ -13,10 +13,10 @@ module Rack #:nodoc:
       module_function
 
       # ==== Notes
-      # This assumes the header it was passed is well-formed (in terms of
-      # RFC2616 grammar) and *normalized* (stripped), i.e., only checks the
-      # quality factors. Full syntactical inspection of the header is NOT
-      # a task of simple qvalues extractor.
+      # The header it was passed MUST be well-formed (in terms of RFC2616
+      # grammar) and *normalized* (stripped). It checks only quality factors
+      # (full syntactical inspection of the header is NOT a task of simple
+      # qvalues extractor).
       #
       # Also note, that construction like "deflate ; q=0.5" is VALID.
       # Take a look at RFC 2616, sec. 2.1:
@@ -93,13 +93,13 @@ module Rack #:nodoc:
       end
 
       def parse_http_accept(header)
-        header.split(Const::COMMA_SPLITTER).map! { |part| parse_mime_type(part) }.sort_by{ |t| -t.at(2) }
+        header.split(Const::COMMA_SPLITTER).map! { |part| parse_mime_type(part) }.sort_by{ |t| -t.at(3) }
       end
 
-      MEDIA_RANGE_REGEX = %r{^(?:([-\w.+]+)/([-\w.+]+|\*)|\*/\*)\s*;?\s*}.freeze
+      MEDIA_RANGE_REGEX = %r{^\s*(?:([-\w.+]+)/([-\w.+]+|\*)|\*/\*)\s*(?:;\s*|$)}o.freeze
+      ACCEPT_PARAMS_REGEX = /\s*;\s*q\s*=.*/i.freeze
 
-      def parse_mime_type(thing)
-
+      def split_mime_type(thing)
         raise ArgumentError, "Malformed MIME-Type: #{thing.inspect}" unless thing =~ MEDIA_RANGE_REGEX
         type, subtype, snippet = $1, $2, $'
 
@@ -114,11 +114,59 @@ module Rack #:nodoc:
 
         type ? type.downcase! : type = Const::WILDCARD
         subtype ? subtype.downcase! : subtype = Const::WILDCARD
+        snippet.rstrip!
+
+        return type, subtype, snippet
+      end
+
+      # Performs the partial parse of the MIME-Type snippet, i.e
+      # extracts media-range (type, subtype and parameter (as Hash))
+      # from the MIME-Type snippet.
+      #
+      # ==== Notes
+      # The snippet it was passed MUST be well-formed (in terms of RFC2616 grammar,
+      # incl. sec 3.7). It checks only type/subtype pair.
+      #
+      def parse_media_range(thing)
+        media_range = thing =~ ACCEPT_PARAMS_REGEX ? $` : thing
+        type, subtype, snippet = split_mime_type(media_range)
+        params = {}
+
+        snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
+          k,v = pair.split("=",2)
+          k.downcase!
+          #raise ArgumentError, "Malformed parameter syntax: #{pair.inspect}" if k[-1] == ?\s || v[0] == ?\s
+          params[k] = v
+        end
+
+        return type, subtype, params
+      end
+
+      # Performs the full parse of the MIME-Type snippet.
+      # Extracts type, subtype, parameter (as Hash), quality factor and 
+      # accept-extension (as Hash) from the MIME-Type snippet.
+      #
+      # ==== Notes
+      # The snippet it was passed MUST be well-formed (in terms of RFC2616 grammar,
+      # incl. sec. 3.7). It checks only quality factor and type/subtype pair.
+      #
+      def parse_mime_type(thing)
+
+        # RFC 2616, sec. 3.7:
+        # The type, subtype, and parameter attribute names are case-
+        # insensitive. Parameter values might or might not be case-sensitive,
+        # depending on the semantics of the parameter name. Linear white space
+        # (LWS) MUST NOT be used between the type and subtype, nor between an
+        # attribute and its value. The presence or absence of a parameter might
+        # be significant to the processing of a media-type, depending on its
+        # definition within the media type registry.
+
+        type, subtype, snippet = split_mime_type(thing)
         qvalue, params, accept_extension, has_qvalue = QVALUE_DEFAULT, {}, {}, false
 
         snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
           k,v = pair.split("=",2)
-          raise ArgumentError, "Malformed parameter syntax: #{pair.inspect}" if k[-1] == ?\s || v[0] == ?\s
+          #raise ArgumentError, "Malformed parameter syntax: #{pair.inspect}" if k[-1] == ?\s || v[0] == ?\s
 
           k.downcase!
 
@@ -143,24 +191,32 @@ module Rack #:nodoc:
 
         end
 
-        [type, subtype, qvalue, params, accept_extension]
-
+        return type, subtype, params, qvalue, accept_extension
       end
 
       # ==== Parameters
       # type<String>:: Type, the first portion of the MIME-Type's media range.
       # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
-      # params<Hash>:: The MIME-Type parameter, as Hash.
+      # params<Hash>:: Parameter, as Hash; the third portion of the the MIME-Type's media range.
       # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
       # Float:: The quality factor (relative strength of the MIME-Type).
       #
       def qualify_mime_type(type, subtype, params, *types)
-        weight_mime_type(type, subtype, params, *types).first
+        weigh_mime_type(type, subtype, params, *types).first
       end
 
-      def weight_mime_type(type, subtype, params, *types)
+      # ==== Parameters
+      # type<String>:: Type, the first portion of the MIME-Type's media range.
+      # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
+      # params<Hash>:: Parameter, as Hash; the third portion of the the MIME-Type's media range.
+      # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
+      #
+      # ==== Returns
+      # Array:: qvalue, rate and specificity (full relative weight of MIME-Type).
+      #
+      def weigh_mime_type(type, subtype, params, *types)
 
         rate = 0
         specificity = -1
@@ -175,7 +231,7 @@ module Rack #:nodoc:
         # determined by finding the media range with the highest precedence
         # which matches that type.
 
-        types.each do |t,s,q,p,_|
+        types.each do |t,s,p,q,_|
           next unless ((tmatch = type == t) || t == Const::WILDCARD || type == Const::WILDCARD) &&
                       ((smatch = subtype == s) || s == Const::WILDCARD || subtype == Const::WILDCARD)
 
@@ -207,19 +263,19 @@ module Rack #:nodoc:
 
       # ==== Parameters
       # provides<Array>:: The Array of available MIME-Types (snippets). Could be empty.
-      # accepts<String>:: The Array of Acceptable MIME-Types. Could be empty.
+      # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
       #
       # ==== Returns
-      # String:: The best one of provides.
+      # String:: The best one of available MIME-Types or nil.
       #
       def detect_best_mime_type(provides, accepts)
         return nil if provides.empty?
         return provides.first if accepts.empty?
 
-        accepts = accepts.sort_by { |t| -t.at(2) }
+        accepts = accepts.sort_by { |t| -t.at(3) }
         candidate = provides.map { |snippet|
-          type, subtype, _, params, _ = parse_mime_type(snippet)
-          weight_mime_type(type, subtype, params, *accepts) << snippet
+          type, subtype, params = parse_media_range(snippet)
+          weigh_mime_type(type, subtype, params, *accepts) << snippet
         }.max_by { |t| t[0..2] } #instead of #sort
 
         candidate.at(0) == 0 ? nil : candidate.at(3)

@@ -12,7 +12,7 @@ describe Rack::Acceptable::Utils, '.blank?' do
     Rack::Acceptable::Utils.blank?("\r\n").should be_true
   end
 
-  it "and returns false otherwise" do
+  it "returns false otherwise" do
     Rack::Acceptable::Utils.blank?("whatever").should be_false
   end
 
