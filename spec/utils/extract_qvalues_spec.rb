@@ -54,6 +54,11 @@ describe Rack::Acceptable::Utils, ".extract_qvalues" do
     qvalues = Rack::Acceptable::Utils.extract_qvalues('text/plain;q=1.0, text/xml;q=0.5, *;q=0')
     qvalues.should == [['text/plain', 1.0], ['text/xml', 0.5], ['*', 0]]
 
+    qvalues = Rack::Acceptable::Utils.extract_qvalues('text/plain;level=1;q=1.0, text/xml;q=0.5, *;q=0')
+    qvalues.should == [['text/plain;level=1', 1.0], ['text/xml', 0.5], ['*', 0]] 
+    # NOTE: parameter is a part of media range, so it may be necessary.
+    # http://tools.ietf.org/html/rfc2616#section-14.1
+
   end
 
   it "is able to extract quality factors from the HTTP_ACCEPT_ENCODING header" do

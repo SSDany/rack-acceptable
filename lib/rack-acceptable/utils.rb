@@ -2,7 +2,7 @@ module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Utils
 
-      QUALITY_REGEX = /^([^;\s]+)(?:.*?;\s*q=([^;\s]*))?/.freeze
+      QUALITY_REGEX = /\s*;\s*q=([^;\s]*)/.freeze
 
       #http://tools.ietf.org/html/rfc2616#section-3.9
       #http://tools.ietf.org/html/rfc2616#section-2.1
@@ -32,8 +32,9 @@ module Rack #:nodoc:
       def extract_qvalues(header)
         header.split(Const::COMMA_SPLITTER).map! { |entry|
           entry =~ QUALITY_REGEX
-          thing, qvalue = $1, $2
+          thing, qvalue = $` || entry, $1
           raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ QVALUE_REGEX
+          yield(thing) if block_given? # a little bit slower than simple copy-paste, but more useful and convenient
           [thing, qvalue ? qvalue.to_f : QVALUE_DEFAULT]
         }.sort_by { |_,q| -q }
       end
@@ -43,7 +44,7 @@ module Rack #:nodoc:
       # accepts<Array>:: The Array of acceptable content-codings. Could be empty.
       #
       # ==== Returns
-      # String:: The best content-coding.
+      # String:: The best one of available content-codings or nil.
       #
       def detect_best_encoding(provides, accepts)
         return nil if provides.empty?
@@ -92,6 +93,36 @@ module Rack #:nodoc:
         nil
       end
 
+      def detect_best_charset(provides, accepts)
+        raise NotImplementedError
+      end
+
+      # http://tools.ietf.org/html/rfc2616#section-2.2
+      ALPHA = /A-Za-z/.freeze
+
+      # http://tools.ietf.org/html/rfc2616#section-14.4
+      # http://tools.ietf.org/html/rfc2616#section-3.10
+      LANGUAGE_RANGE_REGEX = %r{^\*$|^#{ALPHA}{1,8}(?:-#{ALPHA}{1,8})*$}o.freeze
+
+      # Performs the parse of the HTTP_ACCEPT_LANGUAGE header by the use
+      # of Utils#extract_qvalues. Checks the syntax of Language-Ranges and
+      # well-formedness of quality factors.
+      #
+      def parse_http_accept_language(header)
+        extract_qvalues(header) { |thing|
+
+          # RFC 2616, sec. 3.10:
+          # White space is not allowed within the tag and all tags are case-
+          # insensitive.
+
+          raise ArgumentError, "Malformed Language-Range: #{thing.inspect}" unless LANGUAGE_RANGE_REGEX === thing
+          thing.downcase!
+        }
+      end
+
+      # Performs the parse of the HTTP_ACCEPT header.
+      # Checks the syntax of Media-Ranges and well-formedness of quality factors.
+      #
       def parse_http_accept(header)
         header.split(Const::COMMA_SPLITTER).map! { |part| parse_mime_type(part) }.sort_by{ |t| -t.at(3) }
       end

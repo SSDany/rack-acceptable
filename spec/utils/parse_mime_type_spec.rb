@@ -5,6 +5,7 @@ shared_examples_for "media-range parser" do
   it "raises an ArgumentError when the media range is malformed" do
     %w(*/html %$/whatever whatever/%$ mastah/of/shock).each do |snippet|
       lambda { parse(snippet) }.should raise_error ArgumentError, %r{Malformed MIME-Type}
+      lambda { parse("#{snippet} ; q=0.01") }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     end
   end
 
