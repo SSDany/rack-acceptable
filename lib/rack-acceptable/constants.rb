@@ -5,6 +5,7 @@ module Rack #:nodoc:
       WILDCARD                  = '*'.freeze
       MEDIA_RANGE_WILDCARD      = '*/*'.freeze
       IDENTITY                  = 'identity'.freeze
+      ISO_8859_1                = 'iso-8859-1'.freeze
 
       COMMA_SPLITTER            = /\s*,\s*/.freeze
       SEMICOLON_SPLITTER        = /\s*;\s*/.freeze
