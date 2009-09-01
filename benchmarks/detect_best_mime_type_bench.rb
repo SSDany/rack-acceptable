@@ -1,8 +1,8 @@
 require 'rubygems'
 require 'rbench'
 
-require File.expand_path(File.join(File.dirname(__FILE__), '../lib/rack-acceptable'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'lib/mime_parse.rb'))
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 HEADERS = []
 HEADERS << "text/html;a=2;q=0.5, text/html;a=1;q=0.3, */*"

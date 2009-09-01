@@ -1,8 +1,8 @@
 require 'rubygems'
 require 'rbench'
 
-require File.expand_path(File.join(File.dirname(__FILE__), '../lib/rack-acceptable'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'lib/mime_parse.rb'))
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 SNIPPETS = []
 SNIPPETS << "text/html"

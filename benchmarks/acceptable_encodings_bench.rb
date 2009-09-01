@@ -1,14 +1,9 @@
 require 'rubygems'
 require 'rbench'
-require 'webrick'
 
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
 
 HEADERS = []
-
-HEADERS << 'en-us, en-gb'
-HEADERS << 'en-us;q=0.5, en-gb;q=1.0'
-HEADERS << 'en-gb;q=1.0, en-us;q=0.5, *;q=0'
 
 HEADERS << 'gzip,deflate'
 HEADERS << 'gzip,deflate,*;q=0.1'
@@ -21,19 +16,20 @@ RBench.run(TIMES) do
 
   format :width => 110
 
-  column :webrick,    :title => 'WEBrick'
+  column :rack,       :title => 'Rack'
   column :acceptable, :title => 'Rack::Acceptable'
-  column :diff,       :title => '#2/#1', :compare => [:acceptable, :webrick]
+  column :diff,       :title => '#2/#1', :compare => [:acceptable, :rack]
 
-  group "Extracting qvalues (vs WEBrick, times: #{TIMES})" do
+  group "Parse Accept-Encoding header (vs Rack, times: #{TIMES})" do
     HEADERS.each do |header|
+
+      request = Rack::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header))
+
       report "header: #{header.inspect}" do
-        webrick     { WEBrick::HTTPUtils.parse_qvalues header }
-        acceptable  { Rack::Acceptable::Utils::extract_qvalues header }
+        rack        { request.accept_encoding }
+        acceptable  { Rack::Acceptable::Utils.parse_http_accept_encoding(header) }
       end
+
     end
   end
-
 end
-
-# EOF

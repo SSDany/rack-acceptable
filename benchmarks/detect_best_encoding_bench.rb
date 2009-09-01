@@ -1,8 +1,7 @@
 require 'rubygems'
 require 'rbench'
-require 'rack/utils'
 
-require File.expand_path(File.join(File.dirname(__FILE__), '../lib/rack-acceptable'))
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
 
 HEADERS = []
 HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,*;q=0.5'
