@@ -6,10 +6,10 @@ shared_examples_for "simple HTTP_ACCEPT_CHARSET parser" do
     qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 1.0]]
 
     qvalues = @parser['iso-8859-5;q=0.5, unicode-1-1;q=1.0']
-    qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 0.5]]
+    qvalues.should == [['iso-8859-5', 0.5], ['unicode-1-1', 1.0]]
 
-    qvalues = @parser['unicode-1-1;q=1.0, iso-8859-5;q=0.5, *;q=0']
-    qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 0.5], ['*', 0]]
+    qvalues = @parser['iso-8859-5;q=0.5, unicode-1-1;q=1.0, *;q=0.3']
+    qvalues.should == [['iso-8859-5', 0.5], ['unicode-1-1', 1.0], ['*', 0.3]]
 
   end
 

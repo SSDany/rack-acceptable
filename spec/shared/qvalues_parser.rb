@@ -17,12 +17,12 @@ shared_examples_for 'simple qvalues parser' do
   end
 
   it "raises an ArgumentError when quality factor is malformed" do
-    lambda { @qvalue["#{@sample};q=42"]     }.should raise_error ArgumentError, %r{^Malformed quality factor}
-    lambda { @qvalue["#{@sample};q=bogus"]  }.should raise_error ArgumentError, %r{^Malformed quality factor}
-    lambda { @qvalue["#{@sample};q=.3"]     }.should raise_error ArgumentError, %r{^Malformed quality factor}
-    lambda { @qvalue["#{@sample};q=0.3333"] }.should raise_error ArgumentError, %r{^Malformed quality factor}
-    lambda { @qvalue["#{@sample};q=2.22"]   }.should raise_error ArgumentError, %r{^Malformed quality factor}
-    lambda { @qvalue["#{@sample};q=1.01"]   }.should raise_error ArgumentError, %r{^Malformed quality factor}
+    lambda { @qvalue["#{@sample};q=42"]     }.should raise_error ArgumentError, @message
+    lambda { @qvalue["#{@sample};q=bogus"]  }.should raise_error ArgumentError, @message
+    lambda { @qvalue["#{@sample};q=.3"]     }.should raise_error ArgumentError, @message
+    lambda { @qvalue["#{@sample};q=0.3333"] }.should raise_error ArgumentError, @message
+    lambda { @qvalue["#{@sample};q=2.22"]   }.should raise_error ArgumentError, @message
+    lambda { @qvalue["#{@sample};q=1.01"]   }.should raise_error ArgumentError, @message
   end
 
 end

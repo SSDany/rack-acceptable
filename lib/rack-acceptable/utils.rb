@@ -6,23 +6,24 @@ module Rack #:nodoc:
 
       # http://tools.ietf.org/html/rfc2616#section-2.2
 
-      SEPARATORS    = "()<>@,;:\\\"/[]?={} \t".freeze
-      UNWISE_PATTERN = Regexp.escape(SEPARATORS).freeze
+      SEPARATORS = "()<>@,;:\\\"/[]?={} \t".freeze
+      UNWISE = Regexp.escape(SEPARATORS).freeze
 
       # TODO:
       # \x0-\x1f\x7f\x80-\xff i.e CONTROLS and non-US-ASCII
       # * check with 1.9 (applicable?)
       # * whose task is it?
 
-      UNWISE_CHARS_REGEX  = /[#{UNWISE_PATTERN}]/n.freeze 
-
       QUALITY_REGEX = /\s*;\s*q=([^;\s]*)/i.freeze
 
       #http://tools.ietf.org/html/rfc2616#section-3.9
       #http://tools.ietf.org/html/rfc2616#section-2.1
+
       QVALUE_REGEX = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
       QVALUE_DEFAULT = 1.00
       QVALUE = 'q'.freeze
+
+      HTTP_ACCEPT_SNIPPET_REGEX = /^([^#{UNWISE}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?$/io.freeze
 
       module_function
 
@@ -44,21 +45,27 @@ module Rack #:nodoc:
       # single token.
       #
       def extract_qvalues(header)
-        header.split(Const::COMMA_SPLITTER).map! { |entry|
+        header.split(/,\s*/).map! { |entry|
           entry =~ QUALITY_REGEX
           thing, qvalue = $` || entry, $1
           raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ QVALUE_REGEX
-          yield(thing) if block_given? # a little bit slower than simple copy-paste, but more useful and convenient
           [thing, qvalue ? qvalue.to_f : QVALUE_DEFAULT]
-        }.sort_by { |t,q| -q }
+        }
       end
 
       # Parses HTTP_ACCEPT_ENCODING header.
-      # Checks Content-Codings and well-formedness of quality factors.
       #
       def parse_http_accept_encoding(header)
-        extract_qvalues(header.downcase) { |thing|
-          raise ArgumentError, "Malformed Content-Coding: #{thing.inspect}" if UNWISE_CHARS_REGEX === thing
+        header.split(Const::COMMA_SPLITTER).map! { |entry|
+          raise ArgumentError, "Malformed Accept-Encoding header: #{entry.inspect}" unless
+          HTTP_ACCEPT_SNIPPET_REGEX === entry
+
+          # RFC 2616, sec 3.5:
+          # All content-coding values are case-insensitive.
+
+          thing = $1
+          thing.downcase!
+          [thing, ($2 || QVALUE_DEFAULT).to_f ]
         }
       end
 
@@ -117,11 +124,18 @@ module Rack #:nodoc:
       end
 
       # Parses HTTP_ACCEPT_CHARSET header.
-      # Checks Charsets and well-formedness of quality factors.
       #
       def parse_http_accept_charset(header)
-        extract_qvalues(header.downcase) { |thing|
-          raise ArgumentError, "Malformed Charset: #{thing.inspect}" if UNWISE_CHARS_REGEX === thing
+        header.split(Const::COMMA_SPLITTER).map! { |entry|
+          raise ArgumentError, "Malformed Accept-Charset header: #{entry.inspect}" unless
+          HTTP_ACCEPT_SNIPPET_REGEX === entry
+
+          # RFC 2616, sec 3.4:
+          # HTTP character sets are identified by case-insensitive tokens.
+
+          thing = $1
+          thing.downcase!
+          [thing, ($2 || QVALUE_DEFAULT).to_f]
         }
       end
 
@@ -129,21 +143,24 @@ module Rack #:nodoc:
         raise NotImplementedError
       end
 
-      # http://tools.ietf.org/html/rfc2616#section-14.4
-      # http://tools.ietf.org/html/rfc2616#section-3.10
-      LANGUAGE_RANGE_REGEX = %r{^\*$|^[A-Za-z]{1,8}(?:-[A-Za-z]{1,8})*$}o.freeze
+      HTTP_ACCEPT_LANGUAGE_REGEX = /^(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?$/i.freeze
 
       # Parses HTTP_ACCEPT_LANGUAGE header.
-      # Checks Language-Ranges and well-formedness of quality factors.
       #
-      def parse_http_accept_language(header)
-        extract_qvalues(header.downcase) { |thing|
+      def parse_http_accept_language(header, tags = 0)
+        header.split(Const::COMMA_SPLITTER).map! { |entry|
+          raise ArgumentError, "Malformed Accept-Language header: #{entry.inspect}" unless
+          HTTP_ACCEPT_LANGUAGE_REGEX === entry
+
+          thing = $1
+          thing.downcase!
 
           # RFC 2616, sec. 3.10:
           # White space is not allowed within the tag and all tags are case-
           # insensitive.
 
-          raise ArgumentError, "Malformed Language-Range: #{thing.inspect}" unless LANGUAGE_RANGE_REGEX === thing
+          qvalue = ($2 || QVALUE_DEFAULT).to_f
+          thing.split('-')[0..tags-1] << qvalue
         }
       end
 
@@ -154,7 +171,7 @@ module Rack #:nodoc:
         header.split(Const::COMMA_SPLITTER).map! { |part| parse_mime_type(part) }.sort_by{ |t| -t.at(3) }
       end
 
-      MEDIA_RANGE_REGEX = /^\s*([^#{UNWISE_PATTERN}]+)\/([^#{UNWISE_PATTERN}]+)\s*(?:;|$)/o.freeze #FIXME
+      MEDIA_RANGE_REGEX = /^\s*([^#{UNWISE}]+)\/([^#{UNWISE}]+)\s*(?:;|$)/o.freeze
       ACCEPT_PARAMS_REGEX = /\s*;\s*q\s*=.*/i.freeze
 
       def split_mime_type(thing)
@@ -189,7 +206,6 @@ module Rack #:nodoc:
       def parse_media_range(thing)
         media_range = thing =~ ACCEPT_PARAMS_REGEX ? $` : thing
         type, subtype, snippet = split_mime_type(media_range)
-        #return type, subtype, {} if snippet.empty?
 
         params = {}
         snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
@@ -221,8 +237,6 @@ module Rack #:nodoc:
         # definition within the media type registry.
 
         type, subtype, snippet = split_mime_type(thing)
-
-        #return type, subtype, {}, QVALUE_DEFAULT, {} if snippet.empty?
 
         qvalue, params, accept_extension, has_qvalue = QVALUE_DEFAULT, {}, {}, false
         snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
