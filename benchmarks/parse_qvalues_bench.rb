@@ -15,7 +15,7 @@ HEADERS << 'en-gb;q=1.0, en-us;q=0.5, *;q=0'
 HEADERS << 'gzip,deflate'
 HEADERS << 'gzip,deflate,*;q=0.1'
 HEADERS << 'gzip,deflate;q=0.8,*;q=0.7'
-HEADERS << 'gzip;q=0.3,deflate;q=0.8,compress;q=1.0;*;q=0.7'
+HEADERS << 'gzip;q=0.3,deflate;q=0.8,compress;q=1.0,*;q=0.7'
 
 TIMES = ARGV[0] ? ARGV[0].to_i : 10_000
 
