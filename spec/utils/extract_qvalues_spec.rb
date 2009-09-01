@@ -2,102 +2,155 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Utils, ".extract_qvalues" do
 
+  before :all do
+    @parser = lambda { |thing| Rack::Acceptable::Utils.extract_qvalues(thing) }
+    @qvalue = lambda { |thing| Rack::Acceptable::Utils.extract_qvalues(thing).first.last }
+    @sample = 'whatever'
+  end
+
   describe "when parsing standalone snippet" do
 
-    def qvalue_at(snippet)
-      Rack::Acceptable::Utils.extract_qvalues(snippet).first.at(1)
-    end
-
-    it "defaults quality factor to 1.0" do
-      qvalue_at('compress').should == 1.0
-      qvalue_at('whatever').should == 1.0
-    end
+    it_should_behave_like 'simple qvalues parser'
 
     it "picks out the FIRST 'q' parameter (if any)" do
-      qvalue_at('application/xml;q=0.5;p=q;q=557;a=42').should == 0.5
-    end
-
-    it "extracts well-formed quality factors" do
-      qvalue_at('compress;q=0').should     == 0.000
-      qvalue_at('compress;q=1').should     == 1.000
-      qvalue_at('compress;q=0.000').should == 0.000
-      qvalue_at('compress;q=1.000').should == 1.000
-      qvalue_at('compress;q=0.333').should == 0.333
-      qvalue_at('compress;q=0.3').should   == 0.300
-      qvalue_at('compress;q=1.').should    == 1.000
-      qvalue_at('compress;q=0.').should    == 0.000
-    end
-
-    it "raises an ArgumentError when the quality factor is malformed" do
-      malformed = ["42", "bogus", "", ".3", "-0.4", "1/3", "0.3333", "1.01", "2.22"]
-      malformed.each do |qvalue|
-        snippet = "compress;q=#{qvalue}"
-        lambda { Rack::Acceptable::Utils.extract_qvalues(snippet) }.
-        should raise_error ArgumentError, %r{^Malformed quality factor}
-      end
+      @qvalue['application/xml;q=0.5;p=q;q=557;a=42'].should == 0.5
     end
 
   end
 
   it "returns an empty array if the value it was passed is an empty string" do
-    Rack::Acceptable::Utils.extract_qvalues('').should == []
+    Rack::Acceptable::Utils.extract_qvalues("").should == []
   end
 
-  it "is able to extract quality factors from the HTTP_ACCEPT header" do
+  it_should_behave_like 'simple HTTP_ACCEPT_LANGUAGE parser'
+  it_should_behave_like 'simple HTTP_ACCEPT_CHARSET parser'
+  it_should_behave_like 'simple HTTP_ACCEPT_ENCODING parser'
+  it_should_behave_like 'simple HTTP_ACCEPT parser'
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('text/plain, text/xml')
-    qvalues.should == [['text/plain', 1.0], ['text/xml', 1.0]]
+end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('text/xml;q=0.5, text/plain;q=1.0')
-    qvalues.should == [['text/plain', 1.0], ['text/xml', 0.5]]
+describe Rack::Acceptable::Utils, ".parse_http_accept_language" do
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('text/plain;q=1.0, text/xml;q=0.5, *;q=0')
-    qvalues.should == [['text/plain', 1.0], ['text/xml', 0.5], ['*', 0]]
+  before :all do
+    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_language(thing) }
+    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_language(thing).first.last }
+    @sample = 'en-gb'
+  end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('text/plain;level=1;q=1.0, text/xml;q=0.5, *;q=0')
-    qvalues.should == [['text/plain;level=1', 1.0], ['text/xml', 0.5], ['*', 0]] 
-    # NOTE: parameter is a part of media range, so it may be necessary.
-    # http://tools.ietf.org/html/rfc2616#section-14.1
+  describe "when parsing standalone snippet" do
+
+    it_should_behave_like 'simple qvalues parser'
+
+    it "raises an ArgumentError when Language-Range is malformed" do
+      lambda { Rack::Acceptable::Utils.parse_http_accept_language("veryverylongstring") }.
+      should raise_error ArgumentError, %r{Malformed Language-Range}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_language("en-gb-veryverylongstring") }.
+      should raise_error ArgumentError, %r{Malformed Language-Range}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_language("non_alpha") }.
+      should raise_error ArgumentError, %r{Malformed Language-Range}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_language("header=malformed;q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Language-Range}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_language("q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Language-Range}
+    end
+
+    it "works case-insensitively with Language-Ranges" do
+      Rack::Acceptable::Utils.parse_http_accept_language('EN-gb;q=0.1').should == [['en-gb', 0.1]]
+      Rack::Acceptable::Utils.parse_http_accept_language('en-GB;q=0.1').should == [['en-gb', 0.1]]
+    end
 
   end
 
-  it "is able to extract quality factors from the HTTP_ACCEPT_ENCODING header" do
+  it_should_behave_like 'simple HTTP_ACCEPT_LANGUAGE parser'
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('gzip, compress')
-    qvalues.should == [['gzip', 1.0], ['compress', 1.0]]
+  it "returns an empty array if the value it was passed is an empty string" do
+    Rack::Acceptable::Utils.parse_http_accept_language("").should == []
+  end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('compress;q=0.5, gzip;q=1.0')
-    qvalues.should == [['gzip', 1.0], ['compress', 0.5]]
+end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('gzip;q=1.0, identity; q=0.5, *;q=0')
-    qvalues.should == [['gzip', 1.0], ['identity', 0.5], ['*', 0]]
+describe Rack::Acceptable::Utils, ".parse_http_accept_encoding" do
+
+  before :all do
+    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_encoding(thing) }
+    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_encoding(thing).first.last }
+    @sample = 'deflate'
+  end
+
+  describe "when parsing standalone snippet" do
+
+    it_should_behave_like 'simple qvalues parser'
+
+    it "works case-insensitively with Content-Codings" do
+      Rack::Acceptable::Utils.parse_http_accept_encoding('Deflate;q=0.1').should == [['deflate', 0.1]]
+      Rack::Acceptable::Utils.parse_http_accept_encoding('dEFLATE;q=0.1').should == [['deflate', 0.1]]
+    end
+
+    it "raises an ArgumentError when Content-Coding is malformed" do
+      lambda { Rack::Acceptable::Utils.parse_http_accept_encoding("with\\separators?") }.
+      should raise_error ArgumentError, %r{Malformed Content-Coding}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_encoding("yet_another_with@separators") }.
+      should raise_error ArgumentError, %r{Malformed Content-Coding}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_encoding("header=malformed;q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Content-Coding}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_encoding("q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Content-Coding}
+    end
 
   end
 
-  it "is able to extract quality factors from the HTTP_ACCEPT_LANGUAGE header" do
+  it_should_behave_like 'simple HTTP_ACCEPT_ENCODING parser'
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('en-gb, en-us')
-    qvalues.should == [['en-gb', 1.0], ['en-us', 1.0]]
+  it "returns an empty array if the value it was passed is an empty string" do
+    Rack::Acceptable::Utils.parse_http_accept_encoding("").should == []
+  end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('en-us;q=0.5, en-gb;q=1.0')
-    qvalues.should == [['en-gb', 1.0], ['en-us', 0.5]]
+end
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('en-gb;q=1.0, en-us;q=0.5, *;q=0')
-    qvalues.should == [['en-gb', 1.0], ['en-us', 0.5], ['*', 0]]
+describe Rack::Acceptable::Utils, ".parse_http_accept_charset" do
+
+  before :all do
+    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_charset(thing) }
+    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_http_accept_charset(thing).first.last }
+    @sample = 'iso-8859-1'
+  end
+
+  describe "when parsing standalone snippet" do
+
+    it_should_behave_like 'simple qvalues parser'
+
+    it "raises an ArgumentError when Charset is malformed" do
+      lambda { Rack::Acceptable::Utils.parse_http_accept_charset("with\\separators?") }.
+      should raise_error ArgumentError, %r{Malformed Charset}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_charset("yet_another_with@separators") }.
+      should raise_error ArgumentError, %r{Malformed Charset}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_charset("header=malformed;q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Charset}
+
+      lambda { Rack::Acceptable::Utils.parse_http_accept_charset("q=0.3") }.
+      should raise_error ArgumentError, %r{Malformed Charset}
+    end
+
+    it "works case-insensitively with Charsets" do
+      Rack::Acceptable::Utils.parse_http_accept_charset('uNICODE-1-1;q=0.1').should == [['unicode-1-1', 0.1]]
+      Rack::Acceptable::Utils.parse_http_accept_charset('Unicode-1-1;q=0.1').should == [['unicode-1-1', 0.1]]
+    end
 
   end
 
-  it "is able to extract quality factors from the HTTP_ACCEPT_CHARSET header" do
+  it_should_behave_like 'simple HTTP_ACCEPT_CHARSET parser'
 
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('unicode-1-1, iso-8859-5')
-    qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 1.0]]
-
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('iso-8859-5;q=0.5, unicode-1-1;q=1.0')
-    qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 0.5]]
-
-    qvalues = Rack::Acceptable::Utils.extract_qvalues('unicode-1-1;q=1.0, iso-8859-5;q=0.5, *;q=0')
-    qvalues.should == [['unicode-1-1', 1.0], ['iso-8859-5', 0.5], ['*', 0]]
-
+  it "returns an empty array if the value it was passed is an empty string" do
+    Rack::Acceptable::Utils.parse_http_accept_charset("").should == []
   end
 
 end

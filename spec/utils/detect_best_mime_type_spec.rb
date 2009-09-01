@@ -2,7 +2,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Utils, ".detect_best_mime_type" do
 
-  it "figures of which MIME-Types are acceptable" do
+  it "figures out which MIME-Types are acceptable" do
 
     helper = lambda do |header|
       accepts = Rack::Acceptable::Utils::parse_http_accept(header) #FIXME
