@@ -168,7 +168,7 @@ module Rack #:nodoc:
       # Checks Media-Ranges and well-formedness of quality factors.
       #
       def parse_http_accept(header)
-        header.split(Const::COMMA_SPLITTER).map! { |part| parse_mime_type(part) }.sort_by{ |t| -t.at(3) }
+        header.split(Const::COMMA_SPLITTER).map! { |entry| parse_mime_type(entry) }
       end
 
       MEDIA_RANGE_REGEX = /^\s*([^#{UNWISE}]+)\/([^#{UNWISE}]+)\s*(?:;|$)/o.freeze
