@@ -9,19 +9,21 @@ SNIPPETS << "text/html"
 SNIPPETS << "text/html;level=1;q=0.5"
 SNIPPETS << "text/html;level=2;q=0.5;a=42"
 
-RBench.run(ARGV[0] ? ARGV[0].to_i : 100_000) do
+TIMES = ARGV[0] ? ARGV[0].to_i : 100_000
 
-  format :width => 100
+RBench.run(TIMES) do
 
-  column :origin,     :title => 'MIMEParse'
-  column :alternate,  :title => 'Rack::Acceptable'
-  column :diff,       :title => '#2/#1', :compare => [:alternate, :origin]
+  format :width => 110
 
-  group "Parsing standalone MIME-Type snippet" do
+  column :mimeparse,  :title => 'MIMEParse'
+  column :acceptable, :title => 'Rack::Acceptable'
+  column :diff,       :title => '#2/#1', :compare => [:acceptable, :mimeparse]
+
+  group "Parse MIME-Type snippet (vs MIMEParse; times: #{TIMES})" do
     SNIPPETS.each do |snippet|
-      report "snippet to parse: #{snippet.inspect}" do
-        origin    { ::MIMEParse::parse_mime_type snippet }
-        alternate { ::Rack::Acceptable::Utils::parse_mime_type snippet }
+      report "snippet: #{snippet.inspect}" do
+        mimeparse   { MIMEParse::parse_mime_type snippet }
+        acceptable  { Rack::Acceptable::Utils::parse_mime_type snippet }
       end
     end
   end

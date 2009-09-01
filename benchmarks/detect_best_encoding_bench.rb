@@ -10,20 +10,22 @@ HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,identity;q=0.1'
 
 PROVIDES = %w(compress gzip identity)
 
-RBench.run(ARGV[0] ? ARGV[0].to_i : 10_000) do
+TIMES = ARGV[0] ? ARGV[0].to_i : 100_000
 
-  format :width => 100
+RBench.run(TIMES) do
 
-  column :origin,     :title => 'Rack'
-  column :alternate,  :title => 'Rack::Acceptable'
-  column :diff,       :title => '#2/#1', :compare => [:alternate, :origin]
+  format :width => 110
 
-  group "Detecting the best content-coding" do
+  column :rack,       :title => 'Rack'
+  column :acceptable, :title => 'Rack::Acceptable'
+  column :diff,       :title => '#2/#1', :compare => [:acceptable, :rack]
+
+  group "Detecting the best Content-Coding (vs Rack, times: #{TIMES})" do
     HEADERS.each do |header|
       accepts = Rack::Acceptable::Utils::extract_qvalues(header)
-      report "#{header}" do
-        origin    { Rack::Utils.select_best_encoding PROVIDES, accepts }
-        alternate { Rack::Acceptable::Utils::detect_best_encoding PROVIDES, accepts }
+      report "header: #{header.inspect}" do
+        rack        { Rack::Utils.select_best_encoding PROVIDES, accepts }
+        acceptable  { Rack::Acceptable::Utils::detect_best_encoding PROVIDES, accepts }
       end
     end
   end
