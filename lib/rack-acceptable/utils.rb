@@ -140,7 +140,46 @@ module Rack #:nodoc:
       end
 
       def detect_best_charset(provides, accepts)
-        raise NotImplementedError
+        return nil if provides.empty?
+
+        # RFC 2616, sec 14.2:
+        # If no Accept-Charset header is present, the default is that any
+        # character set is acceptable. If an Accept-Charset header is present,
+        # and if the server cannot send a response which is acceptable
+        # according to the Accept-Charset header, then the server SHOULD send
+        # an error response with the 406 (not acceptable) status code, though
+        # the sending of an unacceptable response is also allowed.
+
+        return provides.first if accepts.empty?
+
+        expansion = nil
+        candidates = []
+
+        accepts << [Const::ISO_8859_1, 1.0] if !(accepts.assoc(Const::ISO_8859_1) || accepts.assoc(Const::WILDCARD))
+        accepts.sort_by{|_,q| -q}.each do |c,q|
+
+          next if q == 0
+
+          if c == Const::WILDCARD
+
+            # RFC 2616, sec 14.2:
+            # The special value "*", if present in the Accept-Charset field,
+            # matches every character set (including ISO-8859-1) which is not
+            # mentioned elsewhere in the Accept-Charset field. If no "*" is present
+            # in an Accept-Charset field, then all character sets not explicitly
+            # mentioned get a quality value of 0, except for ISO-8859-1, which gets
+            # a quality value of 1 if not explicitly mentioned.
+
+            expansion ||= provides - accepts.map { |c,_| c }
+            candidates.concat expansion
+          else
+            candidates << c
+          end
+        end
+
+        specifics = candidates & provides
+        return specifics.first unless specifics.empty?
+        nil
       end
 
       HTTP_ACCEPT_LANGUAGE_REGEX = /^(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?$/i.freeze
