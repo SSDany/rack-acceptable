@@ -30,12 +30,20 @@ describe Rack::Acceptable::Utils, ".detect_best_mime_type" do
     helper["application/xml, application/*"                       ].should == 'application/xml' # specificity wins
     helper["application/*, application/xml"                       ].should == 'application/xml' # specificity wins
 
+    @snippets = ["application/json", "text/html"]
+
+    # stable sorting
+    helper["application/json;q=0.5, text/html;q=0.5, text/plain;q=1"    ].should == "application/json"
+    helper["text/html;q=0.5, application/json;q=0.5, text/plain;q=1"    ].should == "text/html"
+    helper["text/plain;q=0.1, application/json;q=0.5, text/html;q=0.5"  ].should == "application/json"
+    helper["text/plain;q=0.1, text/html;q=0.5, application/json;q=0.5"  ].should == "text/html"
+
     @snippets = ["application/json", "text/html;level=1", "text/html;level=2"]
 
     helper["application/json, text/javascript, */*"               ].should == "application/json"
     helper["application/json, text/html;q=0.9"                    ].should == "application/json"
     helper["text/html;level=2;q=0.5, text/html;level=1;q=0.3"     ].should == "text/html;level=2" # quality wins
-    helper["text/html;level=2;q=0.5, text/html;level=1;q=0.5"     ].should == "text/html;level=1" # order wins
+    helper["text/html;level=2;q=0.5, text/html;level=1;q=0.5"     ].should == "text/html;level=2" # order (in header) wins
     helper["text/html;level=2;q=0.5, text/html;q=0.5"             ].should == "text/html;level=2" # specificity wins
 
   end

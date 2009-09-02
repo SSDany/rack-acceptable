@@ -32,7 +32,7 @@ module Rack #:nodoc:
       # Accept-Charset, Accept-Encoding, Accept-Language.
       #
       # ==== Returns
-      # Array:: Result of parsing. an Array with entries and associated quality
+      # Array:: Result of parsing. An Array with entries and associated quality
       # factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
@@ -127,7 +127,8 @@ module Rack #:nodoc:
         # encoding is acceptable.
 
         candidates, expansion = [], nil
-        accepts.sort_by{ |_,q| -q }.each do |c,q|
+        #accepts.sort_by.{ |_,q| -q }.each do |c,q|
+        accepts.sort_by.with_index { |(_,q),i| [-q,i] }.each do |c,q|
 
           if q == 0
             identity_or_wildcard_prohibited = true if c == Const::IDENTITY || c == Const::WILDCARD
@@ -205,7 +206,8 @@ module Rack #:nodoc:
 
         accepts << [Const::ISO_8859_1, 1.0] unless accepts.assoc(Const::ISO_8859_1) || accepts.assoc(Const::WILDCARD)
 
-        accepts.sort_by{|_,q| -q}.each do |c,q|
+        #accepts.sort_by.{ |_,q| -q }.each do |c,q|
+        accepts.sort_by.with_index { |(_,q),i| [-q,i] }.each do |c,q|
 
           next if q == 0
 
@@ -408,14 +410,16 @@ module Rack #:nodoc:
       # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
-      # Array[Float, Integer, Integer]::
-      # Quality factor, rate and specificity, i.e full relative weight of MIME-Type.
+      # Array[Float, Integer, Integer, Integer]::
+      # Quality factor, rate, specificity and negated index of the most relevant MIME-Type;
+      # i.e full relative weight of MIME-Type.
       #
       def weigh_mime_type(type, subtype, params, *types)
 
         rate = 0
         specificity = -1
         quality = 0.00
+        index = 0
 
         # RFC 2616, sec. 14.1:
         # Media ranges can be overridden by more specific media ranges or
@@ -426,7 +430,7 @@ module Rack #:nodoc:
         # determined by finding the media range with the highest precedence
         # which matches that type.
 
-        types.each do |t,s,p,q,_|
+        types.each_with_index do |(t,s,p,q,_),i|
           next unless ((tmatch = type == t) || t == Const::WILDCARD || type == Const::WILDCARD) &&
                       ((smatch = subtype == s) || s == Const::WILDCARD || subtype == Const::WILDCARD)
 
@@ -450,10 +454,13 @@ module Rack #:nodoc:
           #   i.e, 'a' parameter is NECESSARY, but our MIME-Type does NOT contain it
 
           next if mismatch || (r == rate && sp <= specificity) || (p.keys - params.keys).size > 0
-          specificity, rate, quality = sp, r, q
+          specificity = sp
+          rate = r
+          quality = q
+          index = -i
         end
 
-        return quality, rate, specificity
+        return quality, rate, specificity, index
       end
 
       # ==== Parameters
@@ -476,20 +483,23 @@ module Rack #:nodoc:
         return nil if provides.empty?
         return provides.first if accepts.empty?
 
-        accepts = accepts.sort_by { |t| -t.at(3) }
+        #accepts = accepts.sort_by { |t| -t.at(3) }
+        accepts = accepts.sort_by.with_index { |t,i| [-t.at(3), i] }
+
         candidate = provides.map { |snippet|
           type, subtype, params = parse_media_range(snippet)
           weigh_mime_type(type, subtype, params, *accepts) << snippet
-        }.max_by { |t| t[0..2] } #instead of #sort
+        }.max_by { |t| t[0..3] } #instead of #sort
 
-        candidate.at(0) == 0 ? nil : candidate.at(3)
+        candidate.at(0) == 0 ? nil : candidate.last
       end
 
       def detect_acceptable_mime_type(provides, header)
         return nil if provides.empty?
 
         # TODO: bench it.
-        accepts = extract_qvalues(header).sort_by { |_,q| -q }
+        #accepts = extract_qvalues(header).sort_by { |_,q| -q }
+        accepts = extract_qvalues(header).sort_by.with_index { |(_,q),i| [-q,i] }
         accepts.reject! { |_,q| q == 0 }
         accepts.map! { |t,_| t }
 
