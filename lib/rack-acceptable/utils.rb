@@ -485,6 +485,20 @@ module Rack #:nodoc:
         candidate.at(0) == 0 ? nil : candidate.at(3)
       end
 
+      def detect_acceptable_mime_type(provides, header)
+        return nil if provides.empty?
+
+        # TODO: bench it.
+        accepts = extract_qvalues(header).sort_by { |_,q| -q }
+        accepts.reject! { |_,q| q == 0 }
+        accepts.map! { |t,_| t }
+
+        candidates = accepts & provides
+        return candidates.first unless candidates.empty?
+        return provides.first if accepts.include?(Const::WILDCARD)
+        nil
+      end
+
       def blank?(s)
         s.empty? || s.strip.empty?
       end
