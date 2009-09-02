@@ -15,6 +15,11 @@ module Rack #:nodoc:
       ENV_HTTP_ACCEPT_CHARSET   = 'HTTP_ACCEPT_CHARSET'.freeze
       ENV_HTTP_ACCEPT_LANGUAGE  = 'HTTP_ACCEPT_LANGUAGE'.freeze
 
+      ENV_ACCEPTABLE_ENCODING   = 'rack-acceptable.encodings'.freeze
+      ENV_ACCEPTABLE_CHARSETS   = 'rack-acceptable.charsets'.freeze
+      ENV_ACCEPTABLE_LANGUAGES  = 'rack-acceptable.languages'.freeze
+      ENV_ACCEPTABLE_MIME_TYPES = 'rack-acceptable.mime-types'.freeze
+
     end
   end
 end
