@@ -447,10 +447,10 @@ module Rack #:nodoc:
           end
 
           # we should skip when:
-          # - mismatch: 'text/html;a=2' vs 'text/html;a=1', 'text/*;a=1' etc
+          # - mismatch: "text;html;a=2" against "text/html;a=1,text/*;a=1" etc
           # - rate is lesser (see above)
           # - rates are equal, but sp(ecificity) is lesser or exactly the same
-          # - divergence: 'text/html;b=1' vs 'text/html;a=1' etc,
+          # - divergence: "text/html;b=1" or "text/html" against "text/html;a=1" etc,
           #   i.e, 'a' parameter is NECESSARY, but our MIME-Type does NOT contain it
 
           next if mismatch || (r == rate && sp <= specificity) || (p.keys - params.keys).size > 0
