@@ -4,6 +4,9 @@ require 'rbench'
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
 
 HEADERS = []
+HEADERS << '*'
+HEADERS << 'compress;q=0.5,*;q=1.0'
+HEADERS << 'compress;q=0.5,gzip;q=1.0'
 HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,*;q=0.5'
 HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,identity;q=0.1'
 

@@ -126,9 +126,11 @@ module Rack #:nodoc:
         # Accept-Encoding field-value is empty, then only the "identity"
         # encoding is acceptable.
 
-        candidates, expansion = [], nil
-        #accepts.sort_by.{ |_,q| -q }.each do |c,q|
-        accepts.sort_by.with_index { |(_,q),i| [-q,i] }.each do |c,q|
+        candidates = []
+        expansion = nil
+        i = 0
+
+        accepts.sort_by { |_,q| [-q,i+=1] }.each do |c,q|
 
           if q == 0
             identity_or_wildcard_prohibited = true if c == Const::IDENTITY || c == Const::WILDCARD
@@ -203,11 +205,11 @@ module Rack #:nodoc:
 
         expansion = nil
         candidates = []
+        i = 0
 
         accepts << [Const::ISO_8859_1, 1.0] unless accepts.assoc(Const::ISO_8859_1) || accepts.assoc(Const::WILDCARD)
 
-        #accepts.sort_by.{ |_,q| -q }.each do |c,q|
-        accepts.sort_by.with_index { |(_,q),i| [-q,i] }.each do |c,q|
+        accepts.sort_by { |_,q| [-q,i+=1] }.each do |c,q|
 
           next if q == 0
 
@@ -483,8 +485,8 @@ module Rack #:nodoc:
         return nil if provides.empty?
         return provides.first if accepts.empty?
 
-        #accepts = accepts.sort_by { |t| -t.at(3) }
-        accepts = accepts.sort_by.with_index { |t,i| [-t.at(3), i] }
+        i = 0
+        accepts = accepts.sort_by { |t| [-t.at(3), i+=1] }
 
         candidate = provides.map { |snippet|
           type, subtype, params = parse_media_range(snippet)
@@ -497,9 +499,8 @@ module Rack #:nodoc:
       def detect_acceptable_mime_type(provides, header)
         return nil if provides.empty?
 
-        # TODO: bench it.
-        #accepts = extract_qvalues(header).sort_by { |_,q| -q }
-        accepts = extract_qvalues(header).sort_by.with_index { |(_,q),i| [-q,i] }
+        i = 0
+        accepts = extract_qvalues(header).sort_by { |_,q| [-q,i+=1] }
         accepts.reject! { |_,q| q == 0 }
         accepts.map! { |t,_| t }
 
