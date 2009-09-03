@@ -4,20 +4,23 @@ module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Utils
 
+      #--
+      # http://tools.ietf.org/html/rfc2616#section-2.1
       # http://tools.ietf.org/html/rfc2616#section-2.2
+      # http://tools.ietf.org/html/rfc2616#section-3.9
+      #++
 
       SEPARATORS = "()<>@,;:\\\"/[]?={} \t".freeze
       UNWISE = Regexp.escape(SEPARATORS).freeze
 
+      #--
       # TODO:
       # \x0-\x1f\x7f\x80-\xff i.e CONTROLS and non-US-ASCII
       # * check with 1.9 (applicable?)
       # * whose task is it?
+      #++
 
       QUALITY_REGEX = /\s*;\s*q=([^;\s]*)/i.freeze
-
-      #http://tools.ietf.org/html/rfc2616#section-3.9
-      #http://tools.ietf.org/html/rfc2616#section-2.1
 
       QVALUE_REGEX = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
       QVALUE_DEFAULT = 1.00
@@ -28,32 +31,27 @@ module Rack #:nodoc:
       module_function
 
       # ==== Parameters
-      # header<String>:: The 'Accept' request-header, one of: Accept,
-      # Accept-Charset, Accept-Encoding, Accept-Language.
+      # header<String>:: 
+      #   The 'Accept' request-header, one of: 
+      #   * Accept
+      #   * Accept-Charset
+      #   * Accept-Encoding
+      #   * Accept-Language
       #
       # ==== Returns
-      # Array:: Result of parsing. An Array with entries and associated quality
-      # factors (qvalues). Default qvalue is 1.0.
+      # Result of parsing. An Array with entries (as a +Strings+) and
+      # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
       # ArgumentError:: There's a malformed qvalue in header.
       #
       # ==== Notes
-      # It checks ONLY quality factors (full syntactical inspection of the
-      # HTTP header is NOT a task of simple qvalues extractor).
-      # It DOES NOT perform additional operations (downcase etc), thereto
-      # a bunch of more specific parsers in Utils is provided.
-      #
-      # Also note, that construction like "deflate ; q=0.5" is VALID.
-      # Take a look at RFC 2616, sec. 2.1:
-      # The grammar described by this specification is word-based. Except
-      # where noted otherwise, linear white space (LWS) can be included
-      # between any two adjacent words (token or quoted-string), and
-      # between adjacent words and separators, without changing the
-      # interpretation of a field. At least one delimiter (LWS and/or
-      # separators) MUST exist between any two tokens (for the definition
-      # of "token" below), since they would otherwise be interpreted as a
-      # single token.
+      # * It checks *only* quality factors (full syntactical inspection of
+      #   the HTTP header is *not* a task of simple qvalues extractor).
+      # * It does *not* perform additional operations (downcase etc),
+      #   thereto a bunch of more specific parsers in Utils is provided.
+      # * Also note, that construction like "deflate ; q=0.5" is *valid*
+      #   (according to RFC 2616, sec. 2.1).
       #
       def extract_qvalues(header)
         header.split(Const::COMMA_SPLITTER).map! { |entry|
@@ -68,12 +66,13 @@ module Rack #:nodoc:
       # header<String>:: The Accept-Encoding request-header.
       #
       # ==== Raises
-      # ArgumentError:: Syntax of the header passed is bad. For example,
-      # one of Content-Codings is not a RFC 'token', one of quality factors
-      # is malformed etc.
+      # ArgumentError::
+      #   Syntax of the header passed is bad.
+      #   For example, one of Content-Codings is not a 'token',
+      #   one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Array:: Result of parsing. An Array with (downcased) Content-Codings
+      # Result of parsing. An Array with *downcased* Content-Codings
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_encoding(header)
@@ -95,12 +94,12 @@ module Rack #:nodoc:
       # accepts<Array>:: The Array of acceptable Content-Codings. Could be empty.
       #
       # ==== Returns
-      # String, nil:: The best one of available Content-Codings or nil.
+      # The best one of available Content-Codings (as a +String+) or +nil+.
       #
       # ==== Notes
       # Available and acceptable Content-Codings are supposed to be in same notations
-      # (downcased/upcased or whenever you want). According to RFC 2616, Content-Codings
-      # are case-insensitive.
+      # (downcased/upcased or whenever you want). According to section 3.5 of RFC 2616,
+      # Content-Codings are *case-insensitive*.
       #
       def detect_best_encoding(provides, accepts)
         return nil if provides.empty?
@@ -156,12 +155,13 @@ module Rack #:nodoc:
       # header<String>:: The Accept-Charset request-header.
       #
       # ==== Raises
-      # ArgumentError:: Syntax of the header passed is bad. For example,
-      # one of Content-Codings is not a RFC 'token', one of quality factors
-      # is malformed etc.
+      # ArgumentError::
+      #   Syntax of the header passed is bad.
+      #   For example, one of Charsets is not a 'token',
+      #   one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Array:: Result of parsing, an Array with (downcased) Charsets and
+      # Result of parsing, an Array with *downcased* Charsets and
       # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_charset(header)
@@ -183,12 +183,12 @@ module Rack #:nodoc:
       # accepts<Array>:: The Array of acceptable Charsets. Could be empty.
       #
       # ==== Returns
-      # String, nil:: The best one of available Charsets or nil.
+      # The best one of available Charsets (as a +String+) or +nil+.
       #
       # ==== Notes
       # Available and acceptable Charsets are supposed to be in same notations
-      # (downcased/upcased or whenever you want). According to RFC 2616, Charsets
-      # are case-insensitive.
+      # (downcased/upcased or whenever you want). According to section 3.4 of
+      # RFC 2616, Charsets are *case-insensitive*.
       #
       def detect_best_charset(provides, accepts)
         return nil if provides.empty?
@@ -242,13 +242,14 @@ module Rack #:nodoc:
       # tags<Integer>:: Optional number of Language-Tags to extract.
       #
       # ==== Raises
-      # ArgumentError:: Syntax of the header passed is bad. For example,
-      # one of Language-Ranges is not in a RFC 'Language-Range' pattern, one of
-      # quality factors is malformed etc.
+      # ArgumentError::
+      #   Syntax of the header passed is bad.
+      #   For example, one of Language-Ranges is not in a RFC 'Language-Range'
+      #   pattern, one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Array:: Result of parsing. the flattened Array with (downcased)
-      # Language-Ranges and associated quality factors (qvalues).
+      # Result of parsing. The flattened Array with *downcased*
+      # Language-Ranges (as +Strings+) and associated quality factors (qvalues).
       # Default qvalue is 1.0.
       #
       def parse_http_accept_language(header, tags = 0)
@@ -272,13 +273,14 @@ module Rack #:nodoc:
       # header<String>:: The Accept request-header.
       #
       # ==== Raises
-      # ArgumentError:: Syntax of the header passed is bad. For example,
-      # one of Media-Ranges is not in a RFC 'Media-Range' (type or subtype is invalid,
-      # or there's something like "*/foo") or, at last, one of MIME-Types has malformed
-      # qvalue.
+      # ArgumentError::
+      #   Syntax of the header passed is bad.
+      #   For example, one of Media-Ranges is not in a RFC 'Media-Range'
+      #   pattern (type or subtype is invalid, or there's something like "*/foo")
+      #   or, at last, one of MIME-Types has malformed qvalue.
       #
       # ==== Returns
-      # Array:: Result of parsing, an Array with completely parsed MIME-Types
+      # Result of parsing, an Array with completely parsed MIME-Types
       # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
       #
       def parse_http_accept(header)
@@ -317,7 +319,7 @@ module Rack #:nodoc:
       #
       # ==== Returns
       # Array[String, String, Hash]::
-      # Media-Range of the MIME-Type: type, subtype and parameter (as Hash).
+      #   Media-Range of the MIME-Type: type, subtype and parameter (as a +Hash+).
       #
       # ==== Raises
       # Same things as Utils#split_mime_type.
@@ -342,12 +344,13 @@ module Rack #:nodoc:
       #
       # ==== Returns
       # Array[String, String, Hash, Float, Hash]::
-      # Media-Range (type, subtype and parameter, as Hash), quality factor and
-      # accept-extension of the MIME-Type.
+      #   Media-Range (type, subtype and parameter, as a +Hash+), quality factor
+      #   and accept-extension of the MIME-Type.
       #
       # ==== Raises
-      # ArgumentError:: MIME-Type has malformed quality factor,
-      # or type/subtype pair is not in RFC Media-Range pattern.
+      # ArgumentError::
+      #   MIME-Type has malformed quality factor, or
+      #   type/subtype pair is not in a RFC 'Media-Range' pattern.
       #
       def parse_mime_type(thing)
 
@@ -395,7 +398,7 @@ module Rack #:nodoc:
       # ==== Parameters
       # type<String>:: Type, the first portion of the MIME-Type's media range.
       # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
-      # params<Hash>:: Parameter, as Hash; the third portion of the the MIME-Type's media range.
+      # params<Hash>:: Parameter, as a +Hash+; the third portion of the the MIME-Type's media range.
       # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
@@ -408,13 +411,13 @@ module Rack #:nodoc:
       # ==== Parameters
       # type<String>:: Type, the first portion of the MIME-Type's media range.
       # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
-      # params<Hash>:: Parameter, as Hash; the third portion of the the MIME-Type's media range.
+      # params<Hash>:: Parameter, as a +Hash+; the third portion of the the MIME-Type's media range.
       # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
       # Array[Float, Integer, Integer, Integer]::
-      # Quality factor, rate, specificity and negated index of the most relevant MIME-Type;
-      # i.e full relative weight of MIME-Type.
+      #   Quality factor, rate, specificity and negated index of the most relevant MIME-Type;
+      #   i.e full relative weight of the MIME-Type.
       #
       def weigh_mime_type(type, subtype, params, *types)
 
@@ -470,16 +473,16 @@ module Rack #:nodoc:
       # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
       #
       # ==== Returns
-      # String, nil:: The best one of available MIME-Types or nil.
+      # The best one of available MIME-Types or +nil+.
       #
       # ==== Raises
-      # Same things as Utils#split_mime_type.
+      # Same things as Utils#parse_media_range.
       #
       # ==== Notes
-      # Acceptable MIME-Types are supposed to have downcased and well-formed type,
-      # subtype, parameter's keys (according to RFC 2616, enumerated things are
-      # case-insensitive too), and sensible qvalues ("real numbers in the range 0
-      # through 1, where 0 is the minimum and 1 the maximum value").
+      # Acceptable MIME-Types are supposed to have *downcased* and *well-formed*
+      # type, subtype, parameter's keys (according to RFC 2616, enumerated things
+      # are case-insensitive too), and *sensible* qvalues ("real numbers in the
+      # range 0 through 1, where 0 is the minimum and 1 the maximum value").
       #
       def detect_best_mime_type(provides, accepts)
         return nil if provides.empty?
@@ -506,7 +509,7 @@ module Rack #:nodoc:
 
         candidates = accepts & provides
         return candidates.first unless candidates.empty?
-        return provides.first if accepts.include?(Const::WILDCARD)
+        return provides.first if accepts.include?(Const::MEDIA_RANGE_WILDCARD)
         nil
       end
 
