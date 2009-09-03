@@ -1,3 +1,4 @@
+require 'rubygems'
 gem 'rack', '~>1.0'
 require 'rack'
 
@@ -12,7 +13,8 @@ module Rack #:nodoc:
 
     autoload :Const           , 'rack-acceptable/constants'
     autoload :Utils           , 'rack-acceptable/utils'
-    autoload :Helpers         , 'rack-acceptable/helpers'
+    autoload :RequestHelpers  , 'rack-acceptable/helpers/request'
+    autoload :ResponseHelpers , 'rack-acceptable/helpers/response'
 
   end
 end
