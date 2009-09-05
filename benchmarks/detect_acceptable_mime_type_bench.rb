@@ -2,13 +2,13 @@ require 'rubygems'
 require 'rbench'
 
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
-require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 HEADERS = []
 HEADERS << "text/html"
 HEADERS << "text/html, video/quicktime;q=0.3"
 HEADERS << "text/html, video/quicktime;q=0.3, */*;q=0.001"
-HEADERS << "text/html, text/plain;q=0.5, */*;q=0.001"
+HEADERS << "text/html, text/plain;q=0.5, text/xml;q=0; */*;q=0"
+HEADERS << "text/html, text/plain;q=0.5, text/xml;q=0.3; */*;q=0.9"
 
 PROVIDES = %w(video/quicktime text/html)
 

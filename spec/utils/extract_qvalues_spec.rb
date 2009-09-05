@@ -71,6 +71,15 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_language" do
     Rack::Acceptable::Utils.parse_http_accept_language("").should == []
   end
 
+  it "raises an ArgumentError if the header it was passed is not empty, but blank (acc. to RFC 2616, sections: 14.4, 2.1)" do
+    lambda { Rack::Acceptable::Utils.parse_http_accept_language(" ") }.should raise_error ArgumentError, @message
+  end
+
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_language(' en-gb ; q=0.1 , da ; q=0.01 ')
+    qvalues.should == [['en', 'gb', 0.1], ['da', 0.01]]
+  end
+
   it "is able to extract Language Tags from the well-formed HTTP_ACCEPT_LANGUAGE header (without number of tags)" do
 
     qvalues = Rack::Acceptable::Utils.parse_http_accept_language('da;q=0.3')
@@ -147,6 +156,15 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_encoding" do
     Rack::Acceptable::Utils.parse_http_accept_encoding("").should == []
   end
 
+  it "raises an ArgumentError if the header it was passed is not empty, but blank (acc. to RFC 2616, sections: 14.3, 2.1)" do
+    lambda { Rack::Acceptable::Utils.parse_http_accept_encoding(" ") }.should raise_error ArgumentError, @message
+  end
+
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding(' deflate ; q=0.1 , gzip ; q=0.01 ')
+    qvalues.should == [['deflate', 0.1], ['gzip', 0.01]]
+  end
+
 end
 
 describe Rack::Acceptable::Utils, ".parse_http_accept_charset" do
@@ -187,6 +205,15 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_charset" do
 
   it "returns an empty array if the value it was passed is an empty string" do
     Rack::Acceptable::Utils.parse_http_accept_charset("").should == []
+  end
+
+  it "raises an ArgumentError if the header it was passed is not empty, but blank (acc. to RFC 2616, sections: 14.2, 2.1)" do
+    lambda { Rack::Acceptable::Utils.parse_http_accept_charset(" ") }.should raise_error ArgumentError, @message
+  end
+
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding(' unicode-1-1 ; q=0.1 , iso-8859-1 ; q=0.01 ')
+    qvalues.should == [['unicode-1-1', 0.1], ['iso-8859-1', 0.01]]
   end
 
 end

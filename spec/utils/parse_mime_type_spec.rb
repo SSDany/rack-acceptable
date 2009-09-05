@@ -5,6 +5,8 @@ require SHARED_EXAMPLES_ROOT + 'qvalues_parser'
 shared_examples_for "media-range parser" do
 
   it "raises an ArgumentError when Media-Range is malformed" do
+    lambda { @parser['']                          }.should raise_error ArgumentError, %r{Malformed MIME-Type}
+    lambda { @parser[' ']                         }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     lambda { @parser['foo']                       }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     lambda { @parser['foo/bar/baz']               }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     lambda { @parser['*/foo']                     }.should raise_error ArgumentError, %r{Malformed MIME-Type}
@@ -64,6 +66,11 @@ describe Rack::Acceptable::Utils, ".parse_media_range" do
     parsed[2].should == {'a' => '1', 'b' => '2'}
   end
 
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    parsed = Rack::Acceptable::Utils.parse_media_range(' text/html ; level=2 ; q=0.3 ; answer=42 ')
+    parsed.should == ['text', 'html', {'level' => '2'}]
+  end
+
 end
 
 describe Rack::Acceptable::Utils, ".parse_mime_type", "deal with quality_factors" do
@@ -94,13 +101,10 @@ describe Rack::Acceptable::Utils, ".parse_mime_type" do
     parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333')
     parsed[4].should == {}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333 ; a=557')
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557')
     parsed[4].should == {'a' => '557'}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=foo bar baz ;b=557')
-    parsed[4].should == {'a' => 'foo bar baz', 'b' => '557'}
-
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b=foo bar baz ')
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b=foo bar baz')
     parsed[4].should == {'a' => '557', 'b' => 'foo bar baz'}
 
   end
@@ -109,6 +113,11 @@ describe Rack::Acceptable::Utils, ".parse_mime_type" do
     parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;Q=0.3;AnsWER=WhatEVER')
     parsed[3].should == 0.3
     parsed[4].should == {'answer' => 'WhatEVER'}
+  end
+
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    parsed = Rack::Acceptable::Utils.parse_mime_type(' text/xml ; a=42 ; q=0.333 ; a=foo bar baz ; b=557 ')
+    parsed.should == ['text', 'xml', {'a' => '42'}, 0.333, {'a' => 'foo bar baz', 'b' => '557'} ]
   end
 
 end

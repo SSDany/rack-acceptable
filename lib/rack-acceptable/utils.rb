@@ -26,7 +26,11 @@ module Rack #:nodoc:
       QVALUE_DEFAULT = 1.00
       QVALUE = 'q'.freeze
 
-      HTTP_ACCEPT_SNIPPET_REGEX = /^([^#{UNWISE}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?$/io.freeze
+      HTTP_ACCEPT_SNIPPET_REGEX = /^\s*([^#{UNWISE}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/io.freeze
+
+      COMMA_REGEX         = /,/.freeze
+      COMMA_SPLITTER      = /\s*,\s*/.freeze
+      SEMICOLON_SPLITTER  = /\s*;\s*/.freeze
 
       module_function
 
@@ -54,7 +58,7 @@ module Rack #:nodoc:
       #   (according to RFC 2616, sec. 2.1).
       #
       def extract_qvalues(header)
-        header.split(Const::COMMA_SPLITTER).map! { |entry|
+        header.split(COMMA_SPLITTER).map! { |entry|
           entry =~ QUALITY_REGEX
           thing, qvalue = $` || entry, $1
           raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ QVALUE_REGEX
@@ -76,16 +80,14 @@ module Rack #:nodoc:
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_encoding(header)
-        header.split(Const::COMMA_SPLITTER).map! { |entry|
+        header.downcase.split(COMMA_REGEX).map! { |entry|
           raise ArgumentError, "Malformed Accept-Encoding header: #{entry.inspect}" unless
           HTTP_ACCEPT_SNIPPET_REGEX === entry
 
           # RFC 2616, sec 3.5:
           # All content-coding values are case-insensitive.
 
-          thing = $1
-          thing.downcase!
-          [thing, ($2 || QVALUE_DEFAULT).to_f ]
+          [$1, ($2 || QVALUE_DEFAULT).to_f ]
         }
       end
 
@@ -165,16 +167,14 @@ module Rack #:nodoc:
       # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_charset(header)
-        header.split(Const::COMMA_SPLITTER).map! { |entry|
+        header.downcase.split(COMMA_REGEX).map! { |entry|
           raise ArgumentError, "Malformed Accept-Charset header: #{entry.inspect}" unless
           HTTP_ACCEPT_SNIPPET_REGEX === entry
 
           # RFC 2616, sec 3.4:
           # HTTP character sets are identified by case-insensitive tokens.
 
-          thing = $1
-          thing.downcase!
-          [thing, ($2 || QVALUE_DEFAULT).to_f]
+          [$1, ($2 || QVALUE_DEFAULT).to_f]
         }
       end
 
@@ -235,7 +235,7 @@ module Rack #:nodoc:
         nil
       end
 
-      HTTP_ACCEPT_LANGUAGE_REGEX = /^(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?$/i.freeze
+      HTTP_ACCEPT_LANGUAGE_REGEX = /^\s*(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/i.freeze
 
       # ==== Parameters
       # header<String>:: The Accept-Language request-header.
@@ -253,7 +253,7 @@ module Rack #:nodoc:
       # Default qvalue is 1.0.
       #
       def parse_http_accept_language(header, tags = 0)
-        header.split(Const::COMMA_SPLITTER).map! { |entry|
+        header.downcase.split(COMMA_REGEX).map! { |entry|
           raise ArgumentError, "Malformed Accept-Language header: #{entry.inspect}" unless
           HTTP_ACCEPT_LANGUAGE_REGEX === entry
 
@@ -284,7 +284,7 @@ module Rack #:nodoc:
       # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
       #
       def parse_http_accept(header)
-        header.split(Const::COMMA_SPLITTER).map! { |entry| parse_mime_type(entry) }
+        header.split(COMMA_REGEX).map! { |entry| parse_mime_type(entry) }
       end
 
       MEDIA_RANGE_REGEX = /^\s*([^#{UNWISE}]+)\/([^#{UNWISE}]+)\s*(?:;|$)/o.freeze
@@ -330,7 +330,7 @@ module Rack #:nodoc:
         type, subtype, snippet = split_mime_type(media_range)
 
         params = {}
-        snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
+        snippet.split(SEMICOLON_SPLITTER).each do |pair|
           k,v = pair.split("=",2)
           k.downcase!
           params[k] = v
@@ -366,7 +366,7 @@ module Rack #:nodoc:
         type, subtype, snippet = split_mime_type(thing)
 
         qvalue, params, accept_extension, has_qvalue = QVALUE_DEFAULT, {}, {}, false
-        snippet.split(Const::SEMICOLON_SPLITTER).each do |pair|
+        snippet.split(SEMICOLON_SPLITTER).each do |pair|
           k,v = pair.split("=",2)
 
           k.downcase!
@@ -503,9 +503,8 @@ module Rack #:nodoc:
         return nil if provides.empty?
 
         i = 0
-        accepts = extract_qvalues(header).sort_by { |_,q| [-q,i+=1] }
-        accepts.reject! { |_,q| q == 0 }
-        accepts.map! { |t,_| t }
+        accepts = extract_qvalues(header).select{ |_,q| q != 0 }.sort_by { |_,q| [-q,i+=1] }
+        accepts.map! { |t,_| t  }
 
         candidates = accepts & provides
         return candidates.first unless candidates.empty?
