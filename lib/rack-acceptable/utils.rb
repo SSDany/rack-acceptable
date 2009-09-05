@@ -345,9 +345,9 @@ module Rack #:nodoc:
       #
       def parse_media_range_and_qvalue(thing)
         range = thing =~ QUALITY_REGEX ? $` : thing
-        type, subtype, snippet = split_mime_type(range)
-
         qvalue = $1
+
+        type, subtype, snippet = split_mime_type(range)
         raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}." if qvalue && qvalue !~ QVALUE_REGEX
         return type, subtype, parse_media_range_parameter(snippet), (qvalue || QVALUE_DEFAULT).to_f
       end
