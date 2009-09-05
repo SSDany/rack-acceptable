@@ -37,8 +37,7 @@ shared_examples_for "media-range parser" do
     @parser[ 'text/xml;a=1'             ][2].should == {'a' => '1'}
     @parser[ 'text/xml ; a=1'           ][2].should == {'a' => '1'}
     @parser[ 'text/xml;a=1;b=2'         ][2].should == {'a' => '1', 'b' => '2'}
-    @parser[ 'text/xml;a=1;b=foo bar '  ][2].should == {'a' => '1', 'b' => 'foo bar'}
-    @parser[ 'text/xml;a=foo bar ;b=2'  ][2].should == {'a' => 'foo bar', 'b' => '2'}
+    @parser[ 'text/xml;a=1;b="foo bar"' ][2].should == {'a' => '1', 'b' => '"foo bar"'}
   end
 
   it "works case-insensitively with parameter's keys" do
@@ -104,8 +103,8 @@ describe Rack::Acceptable::Utils, ".parse_mime_type" do
     parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557')
     parsed[4].should == {'a' => '557'}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b=foo bar baz')
-    parsed[4].should == {'a' => '557', 'b' => 'foo bar baz'}
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b="foo bar baz"')
+    parsed[4].should == {'a' => '557', 'b' => '"foo bar baz"'}
 
   end
 
@@ -116,8 +115,8 @@ describe Rack::Acceptable::Utils, ".parse_mime_type" do
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    parsed = Rack::Acceptable::Utils.parse_mime_type(' text/xml ; a=42 ; q=0.333 ; a=foo bar baz ; b=557 ')
-    parsed.should == ['text', 'xml', {'a' => '42'}, 0.333, {'a' => 'foo bar baz', 'b' => '557'} ]
+    parsed = Rack::Acceptable::Utils.parse_mime_type(' text/xml ; a=42 ; q=0.333 ; a="foo bar baz" ; b=557 ')
+    parsed.should == ['text', 'xml', {'a' => '42'}, 0.333, {'a' => '"foo bar baz"', 'b' => '557'} ]
   end
 
 end

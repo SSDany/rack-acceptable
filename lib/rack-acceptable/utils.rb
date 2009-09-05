@@ -258,7 +258,6 @@ module Rack #:nodoc:
           HTTP_ACCEPT_LANGUAGE_REGEX === entry
 
           thing = $1
-          thing.downcase!
 
           # RFC 2616, sec. 3.10:
           # White space is not allowed within the tag and all tags are case-
