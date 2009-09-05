@@ -106,12 +106,23 @@ describe Rack::Acceptable::Utils, ".parse_mime_type" do
     parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b="foo bar baz"')
     parsed[4].should == {'a' => '557', 'b' => '"foo bar baz"'}
 
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;557;6537;b=value')
+    parsed[4].should == {'557' => true, '6537' => true, 'b' => 'value'}
+
   end
 
-  it "works case-insensitively with accept-params's keys (incl. 'q' parameter)" do
+  it "works case-insensitively with 'q' parameter" do
     parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;Q=0.3;AnsWER=WhatEVER')
     parsed[3].should == 0.3
-    parsed[4].should == {'answer' => 'WhatEVER'}
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
+    parsed[3].should == 0.3
+  end
+
+  it "respects the accept-params keys/values" do
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
+    parsed[4].should == {'AnsWER' => 'WhatEVER'}
+    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER')
+    parsed[4].should == {'AnsWER' => true}
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do

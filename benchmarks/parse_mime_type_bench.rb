@@ -19,11 +19,20 @@ RBench.run(TIMES) do
   column :acceptable, :title => 'Rack::Acceptable'
   column :diff,       :title => '#2/#1', :compare => [:acceptable, :mimeparse]
 
-  group "Parse MIME-Type snippet (vs MIMEParse; times: #{TIMES})" do
+  group "Parse MIME-Type snippet (full; times: #{TIMES})" do
     SNIPPETS.each do |snippet|
       report "snippet: #{snippet.inspect}" do
         mimeparse   { MIMEParse::parse_mime_type snippet }
         acceptable  { Rack::Acceptable::Utils::parse_mime_type snippet }
+      end
+    end
+  end
+
+  group "Parse MIME-Type snippet (only necessary data; times: #{TIMES})" do
+    SNIPPETS.each do |snippet|
+      report "snippet: #{snippet.inspect}" do
+        mimeparse   { MIMEParse::parse_mime_type snippet }
+        acceptable  { Rack::Acceptable::Utils::parse_media_range_and_qvalue snippet }
       end
     end
   end
