@@ -72,6 +72,47 @@ describe Rack::Acceptable::Utils, ".parse_media_range" do
 
 end
 
+describe Rack::Acceptable::Utils, ".parse_media_range_and_qvalue", "deal with quality_factors" do
+
+  before :all do
+    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_media_range_and_qvalue(thing).last }
+    @sample = 'text/xml;a=42'
+  end
+
+  it_should_behave_like "simple qvalues parser"
+
+  it "picks out the FIRST 'q' parameter (if any)" do
+    @qvalue['application/xml;q=0.5;p=q;q=557;a=42'].should == 0.5
+  end
+
+end
+
+describe Rack::Acceptable::Utils, ".parse_media_range_and_qvalue" do
+
+  before :all do
+    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_media_range_and_qvalue(thing) }
+  end
+
+  it_should_behave_like "media-range parser"
+
+  it "ignores accept-extension" do
+    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;level=2;q=0.3;answer=42')
+    parsed[2].should == {'level' => '2'}
+
+    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;a=1;b=2;q=0.3')
+    parsed[2].should == {'a' => '1', 'b' => '2'}
+
+    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;a=1;b=2;Q=0.3')
+    parsed[2].should == {'a' => '1', 'b' => '2'}
+  end
+
+  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
+    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue(' text/html ; level=2 ; q=0.3 ; answer=42 ')
+    parsed.should == ['text', 'html', {'level' => '2'}, 0.3]
+  end
+
+end
+
 describe Rack::Acceptable::Utils, ".parse_mime_type", "deal with quality_factors" do
 
   before :all do
