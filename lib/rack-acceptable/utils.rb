@@ -399,11 +399,12 @@ module Rack #:nodoc:
           # default value is q=1.
 
           if has_qvalue
+            #raise ArgumentError, "Malformed accept-extension: #{pair}" if v && v.empty? #necessary?
             accept_extension[k] = v || true # token [ "=" ( token | quoted-string ) ] - i.e, "v" is OPTIONAL.
           else
             k.downcase!
             if k == QVALUE
-              raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" unless QVALUE_REGEX === v
+              raise ArgumentError, "Malformed quality factor: #{v.inspect}" unless QVALUE_REGEX === v
               qvalue = v.to_f
               has_qvalue = true
             else
