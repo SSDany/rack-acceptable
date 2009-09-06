@@ -15,7 +15,7 @@ describe Rack::Acceptable::Utils, ".detect_best_encoding" do
     helper[%w(identity)               , ['identity', 0.0]                 ].should == nil
     helper[%w(identity)               , ['compress', 1.0], ['gzip', 1.0]  ].should == 'identity'
     helper[%w(compress gzip identity)                                     ].should == 'identity'
-    helper[%w(compress gzip)                                              ].should == 'compress'
+    helper[%w(compress gzip)                                              ].should == nil
     helper[%w(compress gzip identity) , ['*',1.0], ['compress',0.9]       ].should == 'gzip'
     helper[%w(compress gzip identity) , ['*',0.0], ['identity',0.1]       ].should == 'identity'
     helper[%w(compress gzip identity) , ['compress',0.0], ['gzip',0.0]    ].should == 'identity'

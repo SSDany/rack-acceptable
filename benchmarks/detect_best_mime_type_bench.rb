@@ -5,11 +5,11 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-ac
 require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 HEADERS = []
-HEADERS << "text/html;a=2;q=0.5, text/html;a=1;q=0.3, */*"
-HEADERS << "text/html;a=2;q=0.3, text/html;a=1;q=0.5, */*"
-HEADERS << "text/html;a=2;q=0.3, text/html;a=1;q=0.5, */*;q=0.1"
+HEADERS << "app/xml"
+HEADERS << "app/xml;q=0.9, */*;q=0.1"
+HEADERS << "app/xml;q=0.9, text/xml;q=0.5, */*;q=0.1"
 
-PROVIDES = %w(text/html;a=1 text/html;a=2 text/html)
+PROVIDES = %w(app/xml text/xml;a=1 text/xml)
 
 TIMES = ARGV[0] ? ARGV[0].to_i : 10_000
 

@@ -10,27 +10,36 @@ module Rack #:nodoc:
       # http://tools.ietf.org/html/rfc2616#section-3.9
       #++
 
-      SEPARATORS = "()<>@,;:\\\"/[]?={} \t".freeze
-      UNWISE = Regexp.escape(SEPARATORS).freeze
+      QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
+      QUALITY_SPLITTER    = /\s*;\s*q\s*=/i
+      QVALUE_REGEX        = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
+      QVALUE_DEFAULT      = 1.00
+      QVALUE              = 'q'.freeze
 
-      #--
-      # TODO:
-      # \x0-\x1f\x7f\x80-\xff i.e CONTROLS and non-US-ASCII
-      # * check with 1.9 (applicable?)
-      # * whose task is it?
-      #++
+      # --
+      # RFC 2616, sec. 4.2:
+      # message-header = field-name ":" [ field-value ]
+      # field-name     = token
+      # field-value    = *( field-content | LWS )
+      # field-content  = <the OCTETs making up the field-value
+      #                  and consisting of either *TEXT or combinations
+      #                  of token, separators, and quoted-string>
+      #
+      # The field-content does not include any leading or trailing LWS:
+      # linear white space occurring before the first non-whitespace character
+      # of the field-value or after the last non-whitespace character of the
+      # field-value. Such leading or trailing LWS MAY be removed without changing
+      # the semantics of the field value. Any LWS that occurs between
+      # field-content MAY be replaced with a single SP before interpreting the
+      # field value or forwarding the message downstream.
+      #
+      # ++
 
-      QUALITY_REGEX = /\s*;\s*q=([^;\s]*)/i.freeze
-
-      QVALUE_REGEX = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
-      QVALUE_DEFAULT = 1.00
-      QVALUE = 'q'.freeze
-
-      HTTP_ACCEPT_SNIPPET_REGEX = /^\s*([^#{UNWISE}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/io.freeze
-
-      COMMA_REGEX         = /,/.freeze
-      COMMA_SPLITTER      = /\s*,\s*/.freeze
+      PAIR_SPLITTER       = /\=/.freeze
+      COMMA_SPLITTER      = /,\s*/.freeze
       SEMICOLON_SPLITTER  = /\s*;\s*/.freeze
+
+      TOKEN = "A-Za-z0-9#{Regexp.escape('!#$&%\'*+-.^_`|~')}".freeze
 
       module_function
 
@@ -66,6 +75,8 @@ module Rack #:nodoc:
         }
       end
 
+      HTTP_ACCEPT_SNIPPET_REGEX = /^([#{TOKEN}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/io.freeze
+
       # ==== Parameters
       # header<String>:: The Accept-Encoding request-header.
       #
@@ -80,14 +91,10 @@ module Rack #:nodoc:
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_encoding(header)
-        header.downcase.split(COMMA_REGEX).map! { |entry|
+        header.downcase.split(COMMA_SPLITTER).map! { |entry|
           raise ArgumentError, "Malformed Accept-Encoding header: #{entry.inspect}" unless
           HTTP_ACCEPT_SNIPPET_REGEX === entry
-
-          # RFC 2616, sec 3.5:
-          # All content-coding values are case-insensitive.
-
-          [$1, ($2 || QVALUE_DEFAULT).to_f ]
+          [$1, ($2 || QVALUE_DEFAULT).to_f]
         }
       end
 
@@ -117,7 +124,8 @@ module Rack #:nodoc:
         # additional information that a different content-coding is meaningful
         # to the client.
 
-        return (identity ? Const::IDENTITY : provides.first) if accepts.empty?
+        return Const::IDENTITY if identity && accepts.empty?
+        #return (identity ? Const::IDENTITY : provides.first) if accepts.empty?
 
         # RFC 2616, sec. 14.3:
         # The "identity" content-coding is always acceptable, unless
@@ -167,13 +175,9 @@ module Rack #:nodoc:
       # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_charset(header)
-        header.downcase.split(COMMA_REGEX).map! { |entry|
+        header.downcase.split(COMMA_SPLITTER).map! { |entry|
           raise ArgumentError, "Malformed Accept-Charset header: #{entry.inspect}" unless
           HTTP_ACCEPT_SNIPPET_REGEX === entry
-
-          # RFC 2616, sec 3.4:
-          # HTTP character sets are identified by case-insensitive tokens.
-
           [$1, ($2 || QVALUE_DEFAULT).to_f]
         }
       end
@@ -235,7 +239,13 @@ module Rack #:nodoc:
         nil
       end
 
-      HTTP_ACCEPT_LANGUAGE_REGEX = /^\s*(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/i.freeze
+      #--
+      # RFC 2616, sec. 3.10:
+      # White space is not allowed within the tag and all tags are case-
+      # insensitive.
+      #++
+
+      HTTP_ACCEPT_LANGUAGE_REGEX = /^(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/.freeze
 
       # ==== Parameters
       # header<String>:: The Accept-Language request-header.
@@ -253,18 +263,11 @@ module Rack #:nodoc:
       # Default qvalue is 1.0.
       #
       def parse_http_accept_language(header, ranges = 0)
-        header.downcase.split(COMMA_REGEX).map! { |entry|
+        header.downcase.split(COMMA_SPLITTER).map! { |entry|
           raise ArgumentError, "Malformed Accept-Language header: #{entry.inspect}" unless
           HTTP_ACCEPT_LANGUAGE_REGEX === entry
-
-          thing = $1
-
-          # RFC 2616, sec. 3.10:
-          # White space is not allowed within the tag and all tags are case-
-          # insensitive.
-
           qvalue = ($2 || QVALUE_DEFAULT).to_f
-          thing.split('-')[0..ranges-1] << qvalue
+          $1.split('-')[0..ranges-1] << qvalue
         }
       end
 
@@ -283,17 +286,18 @@ module Rack #:nodoc:
       # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
       #
       def parse_http_accept(header)
-        header.split(COMMA_REGEX).map! { |entry| parse_media_range_and_qvalue(entry) }
+        header.split(COMMA_SPLITTER).map! { |entry| parse_media_range_and_qvalue(entry) }
       end
 
-      MEDIA_RANGE_REGEX = /^\s*([^#{UNWISE}]+)\/([^#{UNWISE}]+)\s*(?:;|$)/o.freeze
-      ACCEPT_PARAMS_REGEX = /\s*;\s*q=.*/i.freeze
+      MEDIA_RANGE_REGEX = /^([#{TOKEN}]+)\/([#{TOKEN}]+)\s*(?:;|$)/o.freeze
+
+      # :stopdoc:
 
       def split_mime_type(thing)
-        raise ArgumentError, "Malformed MIME-Type: #{thing.inspect}" unless thing =~ MEDIA_RANGE_REGEX
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless thing =~ MEDIA_RANGE_REGEX
         type, subtype, snippet = $1, $2, $'
 
-        raise ArgumentError, "Malformed MIME-Type: #{thing.inspect}" if 
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
           type == Const::WILDCARD &&
           subtype != Const::WILDCARD
 
@@ -313,6 +317,18 @@ module Rack #:nodoc:
         return type, subtype, snippet
       end
 
+      def parse_media_range_parameter(snippet)
+        params = {}
+        for pair in snippet.split(SEMICOLON_SPLITTER)
+          k,v = pair.split(PAIR_SPLITTER,2)
+          k.downcase!
+          params[k] = v
+        end
+        params
+      end
+
+      #:startdoc:
+
       # ==== Parameters
       # thing<String>:: The MIME-Type snippet.
       #
@@ -325,8 +341,8 @@ module Rack #:nodoc:
       # In other words, it checks only type/subtype pair.
       #
       def parse_media_range(thing)
-        range = thing =~ ACCEPT_PARAMS_REGEX ? $` : thing
-        type, subtype, snippet = split_mime_type(range)
+        thing =~ QUALITY_SPLITTER
+        type, subtype, snippet = split_mime_type($` || thing)
         return type, subtype, parse_media_range_parameter(snippet)
       end
 
@@ -344,24 +360,12 @@ module Rack #:nodoc:
       #   type/subtype pair is not in a RFC 'Media-Range' pattern.
       #
       def parse_media_range_and_qvalue(thing)
-        range = thing =~ QUALITY_REGEX ? $` : thing
-        qvalue = $1
+        thing =~ QUALITY_REGEX
+        range, qvalue = $` || thing, $1
 
+        raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ QVALUE_REGEX
         type, subtype, snippet = split_mime_type(range)
-        raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}." if qvalue && qvalue !~ QVALUE_REGEX
         return type, subtype, parse_media_range_parameter(snippet), (qvalue || QVALUE_DEFAULT).to_f
-      end
-
-      PAIR_REGEX = /\=/.freeze
-
-      def parse_media_range_parameter(snippet)
-        params = {}
-        snippet.split(SEMICOLON_SPLITTER).each do |pair|
-          k,v = pair.split(PAIR_REGEX,2)
-          k.downcase!
-          params[k] = v
-        end
-        params
       end
 
       # ==== Parameters
@@ -382,8 +386,8 @@ module Rack #:nodoc:
         type, subtype, snippet = split_mime_type(thing)
 
         qvalue, params, accept_extension, has_qvalue = QVALUE_DEFAULT, {}, {}, false
-        snippet.split(SEMICOLON_SPLITTER).each do |pair|
-          k,v = pair.split(PAIR_REGEX,2)
+        for pair in snippet.split(SEMICOLON_SPLITTER)
+          k,v = pair.split(PAIR_SPLITTER,2)
 
           # RFC 2616, sec. 14.1:
           # Each media-range MAY be followed by one or more accept-params,
@@ -399,7 +403,7 @@ module Rack #:nodoc:
           else
             k.downcase!
             if k == QVALUE
-              raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}." unless QVALUE_REGEX === v
+              raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" unless QVALUE_REGEX === v
               qvalue = v.to_f
               has_qvalue = true
             else
@@ -456,26 +460,26 @@ module Rack #:nodoc:
           next unless ((tmatch = type == t) || t == Const::WILDCARD || type == Const::WILDCARD) &&
                       ((smatch = subtype == s) || s == Const::WILDCARD || subtype == Const::WILDCARD)
 
+          # we should skip when:
+          # - divergence: 
+          #     * "text;html;a=2" against "text/html;a=1,text/*;a=1" etc
+          #     * "text/html;b=1" or "text/html" against "text/html;a=1" etc,
+          #       i.e, 'a' parameter is NECESSARY, but our MIME-Type does NOT contain it
+          # - rate is lesser
+          # - rates are equal, but sp(ecificity) is lesser or exactly the same
+
           r  = tmatch ? 10 : 0
           r += smatch ? 1  : 0
           next if r < rate
 
           sp = 0
-          mismatch = false
+          divergence = false
 
-          params.each do |k,v|
-            next unless p.key?(k)
-            p[k] == v ? sp += 1 : (mismatch = true; break)
-          end
+          p.each { |k,v|
+            params.key?(k) && params[k] == v ? sp += 1 : (divergence = true; break)
+          }
 
-          # we should skip when:
-          # - mismatch: "text;html;a=2" against "text/html;a=1,text/*;a=1" etc
-          # - rate is lesser (see above)
-          # - rates are equal, but sp(ecificity) is lesser or exactly the same
-          # - divergence: "text/html;b=1" or "text/html" against "text/html;a=1" etc,
-          #   i.e, 'a' parameter is NECESSARY, but our MIME-Type does NOT contain it
-
-          next if mismatch || (r == rate && sp <= specificity) || (p.keys - params.keys).size > 0
+          next if divergence || (r == rate && sp <= specificity)
           specificity = sp
           rate = r
           quality = q

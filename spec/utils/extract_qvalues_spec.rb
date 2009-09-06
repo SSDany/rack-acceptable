@@ -76,7 +76,7 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_language" do
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language(' en-gb ; q=0.1 , da ; q=0.01 ')
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-gb ; q=0.1 , da ; q=0.01')
     qvalues.should == [['en', 'gb', 0.1], ['da', 0.01]]
   end
 
@@ -161,7 +161,7 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_encoding" do
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding(' deflate ; q=0.1 , gzip ; q=0.01 ')
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding('deflate ; q=0.1 , gzip ; q=0.01')
     qvalues.should == [['deflate', 0.1], ['gzip', 0.01]]
   end
 
@@ -212,7 +212,7 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_charset" do
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding(' unicode-1-1 ; q=0.1 , iso-8859-1 ; q=0.01 ')
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_encoding('unicode-1-1 ; q=0.1 , iso-8859-1 ; q=0.01')
     qvalues.should == [['unicode-1-1', 0.1], ['iso-8859-1', 0.01]]
   end
 
