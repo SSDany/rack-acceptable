@@ -24,10 +24,11 @@ RBench.run(TIMES) do
     HEADERS.each do |header|
 
       request = Rack::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header))
+      request.accept_encoding
 
       report "header: #{header.inspect}" do
         rack        { request.accept_encoding }
-        acceptable  { Rack::Acceptable::Utils.parse_http_accept_encoding(header) }
+        acceptable  { Rack::Acceptable::Encodings.parse_accept_encoding(header) }
       end
 
     end

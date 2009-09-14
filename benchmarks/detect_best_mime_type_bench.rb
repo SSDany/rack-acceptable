@@ -26,8 +26,8 @@ RBench.run(TIMES) do
       report "header: #{header.inspect}" do
         mimeparse { MIMEParse::best_match(PROVIDES, header) }
         acceptable do
-          accepts = Rack::Acceptable::Utils::parse_http_accept(header)
-          Rack::Acceptable::Utils::detect_best_mime_type(PROVIDES, accepts) 
+          accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
+          Rack::Acceptable::MIMETypes::detect_best_mime_type(PROVIDES, accepts) 
         end
       end
     end

@@ -7,6 +7,9 @@ module Rack #:nodoc:
       IDENTITY                  = 'identity'.freeze
       ISO_8859_1                = 'iso-8859-1'.freeze
 
+      COMMA                     = ','.freeze
+      EMPTY_STRING              = ''.freeze
+
       ENV_HTTP_ACCEPT           = 'HTTP_ACCEPT'.freeze
       ENV_HTTP_ACCEPT_ENCODING  = 'HTTP_ACCEPT_ENCODING'.freeze
       ENV_HTTP_ACCEPT_CHARSET   = 'HTTP_ACCEPT_CHARSET'.freeze

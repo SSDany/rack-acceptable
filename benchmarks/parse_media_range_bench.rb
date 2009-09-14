@@ -21,8 +21,8 @@ RBench.run(TIMES) do
   group "Rack::Acceptable's MIME-Type parsers (times: #{TIMES})" do
     SNIPPETS.each do |snippet|
       report "snippet: #{snippet.inspect}" do
-        full      { Rack::Acceptable::Utils::parse_mime_type snippet }
-        partial   { Rack::Acceptable::Utils::parse_media_range snippet }
+        full      { Rack::Acceptable::MIMETypes::parse_mime_type snippet }
+        partial   { Rack::Acceptable::MIMETypes::parse_media_range snippet }
       end
     end
   end

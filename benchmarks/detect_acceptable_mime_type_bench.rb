@@ -25,10 +25,10 @@ RBench.run(TIMES) do
   group "Detecting the (possibly) best MIME-Type (vs self; times: #{TIMES})" do
     HEADERS.each do |header|
       report "header: #{header.inspect}" do
-        weak { Rack::Acceptable::Utils::detect_acceptable_mime_type(PROVIDES, header) }
+        weak { Rack::Acceptable::MIMETypes::detect_acceptable_mime_type(PROVIDES, header) }
         strong do
-          accepts = Rack::Acceptable::Utils::parse_http_accept(header)
-          Rack::Acceptable::Utils::detect_best_mime_type(PROVIDES, accepts) 
+          accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
+          Rack::Acceptable::MIMETypes::detect_best_mime_type(PROVIDES, accepts) 
         end
       end
     end

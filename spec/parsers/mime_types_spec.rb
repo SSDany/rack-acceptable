@@ -4,7 +4,7 @@ require SHARED_EXAMPLES_ROOT + 'qvalues_parser'
 
 shared_examples_for "media-range parser" do
 
-  it "raises an MalformedMIMEType error when Media-Range is malformed" do
+  it "raises an ArgumentError when there's a malformed Media-Range" do
     lambda { @parser['']                          }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     lambda { @parser[' ']                         }.should raise_error ArgumentError, %r{Malformed MIME-Type}
     lambda { @parser['foo']                       }.should raise_error ArgumentError, %r{Malformed MIME-Type}
@@ -27,7 +27,7 @@ shared_examples_for "media-range parser" do
     @parser[ 'text/html;level=1;q=0.33;a=42'  ][0..1].should == ["text", "html"]
   end
 
-  it "works case-insensitively with type and subtype" do
+  it "downcases type and subtype" do
     @parser['TEXT/html'][0..1].should == ['text', 'html']
     @parser['text/HtML'][0..1].should == ['text', 'html']
   end
@@ -40,42 +40,42 @@ shared_examples_for "media-range parser" do
     @parser[ 'text/xml;a=1;b="foo bar"' ][2].should == {'a' => '1', 'b' => '"foo bar"'}
   end
 
-  it "works case-insensitively with parameter's keys" do
+  it "downcases parameter's keys" do
     @parser['text/html;LeVEL=WhatEVER'][2].should == {'level' => 'WhatEVER'}
   end
 
 end
 
-describe Rack::Acceptable::Utils, ".parse_media_range" do
+describe Rack::Acceptable::MIMETypes, ".parse_media_range" do
 
   before :all do
-    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_mime_type(thing) }
+    @parser = lambda { |thing| Rack::Acceptable::MIMETypes.parse_mime_type(thing) }
   end
 
   it_should_behave_like "media-range parser"
 
   it "ignores accept-params (incl. 'q' parameter)" do
-    parsed = Rack::Acceptable::Utils.parse_media_range('text/html;level=2;q=0.3;answer=42')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;level=2;q=0.3;answer=42')
     parsed[2].should == {'level' => '2'}
 
-    parsed = Rack::Acceptable::Utils.parse_media_range('text/html;a=1;b=2;q=0.3')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;a=1;b=2;q=0.3')
     parsed[2].should == {'a' => '1', 'b' => '2'}
 
-    parsed = Rack::Acceptable::Utils.parse_media_range('text/html;a=1;b=2;Q=0.3')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;a=1;b=2;Q=0.3')
     parsed[2].should == {'a' => '1', 'b' => '2'}
   end
 
-  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    parsed = Rack::Acceptable::Utils.parse_media_range('text/html ; level=2 ; q=0.3 ; answer=42')
+  it "ignores whitespaces between 'words' and semicolons" do
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html ; level=2 ; q=0.3 ; answer=42')
     parsed.should == ['text', 'html', {'level' => '2'}]
   end
 
 end
 
-describe Rack::Acceptable::Utils, ".parse_media_range_and_qvalue", "deal with quality_factors" do
+describe Rack::Acceptable::MIMETypes, ".parse_media_range_and_qvalue", "deal with quality_factors" do
 
   before :all do
-    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_media_range_and_qvalue(thing).last }
+    @qvalue = lambda { |thing| Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue(thing).last }
     @sample = 'text/xml;a=42'
   end
 
@@ -90,33 +90,33 @@ end
 describe Rack::Acceptable::Utils, ".parse_media_range_and_qvalue" do
 
   before :all do
-    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_media_range_and_qvalue(thing) }
+    @parser = lambda { |thing| Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue(thing) }
   end
 
   it_should_behave_like "media-range parser"
 
   it "ignores accept-extension" do
-    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;level=2;q=0.3;answer=42')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue('text/html;level=2;q=0.3;answer=42')
     parsed[2].should == {'level' => '2'}
 
-    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;a=1;b=2;q=0.3')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue('text/html;a=1;b=2;q=0.3')
     parsed[2].should == {'a' => '1', 'b' => '2'}
 
-    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html;a=1;b=2;Q=0.3')
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue('text/html;a=1;b=2;Q=0.3')
     parsed[2].should == {'a' => '1', 'b' => '2'}
   end
 
-  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    parsed = Rack::Acceptable::Utils.parse_media_range_and_qvalue('text/html ; level=2 ; q=0.3 ; answer=42')
+  it "ignores whitespaces between 'words' and semicolons" do
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range_and_qvalue('text/html ; level=2 ; q=0.3 ; answer=42')
     parsed.should == ['text', 'html', {'level' => '2'}, 0.3]
   end
 
 end
 
-describe Rack::Acceptable::Utils, ".parse_mime_type", "deal with quality_factors" do
+describe Rack::Acceptable::MIMETypes, ".parse_mime_type", "deal with quality_factors" do
 
   before :all do
-    @qvalue = lambda { |thing| Rack::Acceptable::Utils.parse_mime_type(thing).at(3) }
+    @qvalue = lambda { |thing| Rack::Acceptable::MIMETypes.parse_mime_type(thing).at(3) }
     @sample = 'text/xml'
   end
 
@@ -128,46 +128,46 @@ describe Rack::Acceptable::Utils, ".parse_mime_type", "deal with quality_factors
 
 end
 
-describe Rack::Acceptable::Utils, ".parse_mime_type" do
+describe Rack::Acceptable::MIMETypes, ".parse_mime_type" do
 
   before :all do
-    @parser = lambda { |thing| Rack::Acceptable::Utils.parse_mime_type(thing) }
+    @parser = lambda { |thing| Rack::Acceptable::MIMETypes.parse_mime_type(thing) }
   end
 
   it_should_behave_like "media-range parser"
 
   it "extracts accept-extension (as Hash)" do
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333')
     parsed[4].should == {}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333;a=557')
     parsed[4].should == {'a' => '557'}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;a=557;b="foo bar baz"')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333;a=557;b="foo bar baz"')
     parsed[4].should == {'a' => '557', 'b' => '"foo bar baz"'}
 
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml;a=42;q=0.333;557;6537;b=value')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333;557;6537;b=value')
     parsed[4].should == {'557' => true, '6537' => true, 'b' => 'value'}
 
   end
 
   it "works case-insensitively with 'q' parameter" do
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;Q=0.3;AnsWER=WhatEVER')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/html;level=2;Q=0.3;AnsWER=WhatEVER')
     parsed[3].should == 0.3
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
     parsed[3].should == 0.3
   end
 
   it "respects the accept-params keys/values" do
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/html;level=2;q=0.3;AnsWER=WhatEVER')
     parsed[4].should == {'AnsWER' => 'WhatEVER'}
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/html;level=2;q=0.3;AnsWER')
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/html;level=2;q=0.3;AnsWER')
     parsed[4].should == {'AnsWER' => true}
   end
 
-  it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    parsed = Rack::Acceptable::Utils.parse_mime_type('text/xml ; a=42 ; q=0.333 ; a="foo bar baz" ; b=557')
+  it "ignores whitespaces between 'words' and semicolons" do
+    parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml ; a=42 ; q=0.333 ; a="foo bar baz" ; b=557')
     parsed.should == ['text', 'xml', {'a' => '42'}, 0.333, {'a' => '"foo bar baz"', 'b' => '557'} ]
   end
 

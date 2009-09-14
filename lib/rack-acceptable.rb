@@ -12,7 +12,13 @@ module Rack #:nodoc:
   module Acceptable
 
     autoload :Const           , 'rack-acceptable/constants'
+
     autoload :Utils           , 'rack-acceptable/utils'
+    autoload :Encodings       , 'rack-acceptable/encodings'
+    autoload :Charsets        , 'rack-acceptable/charsets'
+    autoload :Languages       , 'rack-acceptable/languages'
+    autoload :MIMETypes       , 'rack-acceptable/mimetypes'
+
     autoload :RequestHelpers  , 'rack-acceptable/helpers/request'
     autoload :ResponseHelpers , 'rack-acceptable/helpers/response'
 

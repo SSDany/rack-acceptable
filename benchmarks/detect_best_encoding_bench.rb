@@ -28,7 +28,7 @@ RBench.run(TIMES) do
       accepts = Rack::Acceptable::Utils::extract_qvalues(header)
       report "header: #{header.inspect}" do
         rack        { Rack::Utils.select_best_encoding PROVIDES, accepts }
-        acceptable  { Rack::Acceptable::Utils::detect_best_encoding PROVIDES, accepts }
+        acceptable  { Rack::Acceptable::Encodings::detect_best_encoding PROVIDES, accepts }
       end
     end
   end

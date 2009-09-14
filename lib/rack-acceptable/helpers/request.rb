@@ -4,12 +4,12 @@ module Rack #:nodoc:
 
       def acceptable_encodings
         @env[Const::ENV_PARSED_ENCODINGS] ||=
-        Utils.parse_http_accept_encoding(@env[Const::ENV_HTTP_ACCEPT_ENCODING].to_s)
+        Encodings.parse_accept_encoding(@env[Const::ENV_HTTP_ACCEPT_ENCODING].to_s)
       end
 
       def acceptable_charsets
         @env[Const::ENV_PARSED_CHARSETS] ||=
-        Utils.parse_http_accept_charset(@env[Const::ENV_HTTP_ACCEPT_CHARSET].to_s)
+        Charsets.parse_accept_charset(@env[Const::ENV_HTTP_ACCEPT_CHARSET].to_s)
       end
 
       def acceptable_media_ranges
@@ -25,7 +25,7 @@ module Rack #:nodoc:
 
       def acceptable_mime_types
         @env[Const::ENV_PARSED_MIME_TYPES] ||=
-        Utils.parse_http_accept(@env[Const::ENV_HTTP_ACCEPT].to_s)
+        MIMETypes.parse_accept(@env[Const::ENV_HTTP_ACCEPT].to_s)
       end
 
     end

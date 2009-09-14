@@ -1,14 +1,14 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Utils, ".detect_best_charset" do
+describe Rack::Acceptable::Charsets, ".detect_best_charset" do
 
   before :all do
     @helper = lambda do |provides, *accepts|
-      Rack::Acceptable::Utils.detect_best_charset(provides, accepts)
+      Rack::Acceptable::Charsets.detect_best_charset(provides, accepts)
     end
   end
 
-  it "figures out which charsets are acceptable (when iso-8859-1 and wildcard is NOT explicitly mentioned)" do
+  it "figures out which Charsets are acceptable (when iso-8859-1 and wildcard is NOT explicitly mentioned)" do
 
     @helper[%w(utf-8 iso-8859-1)                        ].should == 'utf-8'
     @helper[%w()                  , ['utf-8', 0.3]      ].should == nil

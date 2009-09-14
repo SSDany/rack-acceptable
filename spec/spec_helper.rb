@@ -10,6 +10,7 @@ begin
   SHARED_EXAMPLES_ROOT = SPEC_ROOT + 'shared'
 
   require SHARED_EXAMPLES_ROOT + 'qvalues_parser'
+  require SHARED_EXAMPLES_ROOT + 'comma_separated_list_parser'
   require SHARED_EXAMPLES_ROOT + 'http_accept_language_parser'
   require SHARED_EXAMPLES_ROOT + 'http_accept_charset_parser'
   require SHARED_EXAMPLES_ROOT + 'http_accept_encoding_parser'

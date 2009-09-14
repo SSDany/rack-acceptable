@@ -26,7 +26,7 @@ RBench.run(TIMES) do
     SNIPPETS.each do |snippet|
       report "snippet: #{snippet.inspect}" do
         mimeparse   { MIMEParse::parse_mime_type snippet }
-        acceptable  { Rack::Acceptable::Utils::parse_mime_type snippet }
+        acceptable  { Rack::Acceptable::MIMETypes::parse_mime_type snippet }
       end
     end
   end
@@ -35,7 +35,7 @@ RBench.run(TIMES) do
     SNIPPETS.each do |snippet|
       report "snippet: #{snippet.inspect}" do
         mimeparse   { MIMEParse::parse_mime_type snippet }
-        acceptable  { Rack::Acceptable::Utils::parse_media_range_and_qvalue snippet }
+        acceptable  { Rack::Acceptable::MIMETypes::parse_media_range_and_qvalue snippet }
       end
     end
   end
