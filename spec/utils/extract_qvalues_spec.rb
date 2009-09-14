@@ -60,11 +60,6 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_language" do
       should raise_error ArgumentError, @message
     end
 
-    it "works case-insensitively with Language-Ranges" do
-      Rack::Acceptable::Utils.parse_http_accept_language('EN-gb;q=0.1').should == [['en', 'gb', 0.1]]
-      Rack::Acceptable::Utils.parse_http_accept_language('en-GB;q=0.1').should == [['en', 'gb', 0.1]]
-    end
-
   end
 
   it "returns an empty array if the value it was passed is an empty string" do
@@ -76,43 +71,11 @@ describe Rack::Acceptable::Utils, ".parse_http_accept_language" do
   end
 
   it "ignores whitespaces (acc. to RFC 2616, sec. 2.1)" do
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-gb ; q=0.1 , da ; q=0.01')
-    qvalues.should == [['en', 'gb', 0.1], ['da', 0.01]]
+    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-GB ; q=0.1 , da ; q=0.01')
+    qvalues.should == [['en-GB', 0.1], ['da', 0.01]]
   end
 
-  it "is able to extract Language Tags from the well-formed HTTP_ACCEPT_LANGUAGE header (without number of tags)" do
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('da;q=0.3')
-    qvalues.should == [['da', 0.3]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('da;q=0.3, en-us')
-    qvalues.should == [['da', 0.3], ['en', 'us', 1.0]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-gb, en-us')
-    qvalues.should == [['en', 'gb', 1.0], ['en', 'us', 1.0]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-us;q=0.5, en-gb;q=1.0')
-    qvalues.should == [['en', 'us', 0.5], ['en', 'gb', 1.0]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language('en-gb;q=1.0, en-us;q=0.5, *;q=0.3')
-    qvalues.should == [['en', 'gb', 1.0], ['en', 'us', 0.5], ['*', 0.3]]
-
-  end
-
-  it "is able to extract Language Tags from the well-formed HTTP_ACCEPT_LANGUAGE header (with number of tags)" do
-
-    header = 'en-us-foo;q=0.3, en-us, da;q=0.1'
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language(header, 1)
-    qvalues.should == [['en', 0.3], ['en', 1.0], ['da', 0.1]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language(header, 2)
-    qvalues.should == [['en', 'us', 0.3], ['en', 'us', 1.0], ['da', 0.1]]
-
-    qvalues = Rack::Acceptable::Utils.parse_http_accept_language(header, 3)
-    qvalues.should == [['en', 'us', 'foo', 0.3], ['en', 'us', 1.0], ['da', 0.1]]
-
-  end
+  it_should_behave_like 'simple HTTP_ACCEPT_LANGUAGE parser'
 
 end
 

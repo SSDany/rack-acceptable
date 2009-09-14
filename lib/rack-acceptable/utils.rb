@@ -11,12 +11,14 @@ module Rack #:nodoc:
       #++
 
       QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
-      QUALITY_SPLITTER    = /\s*;\s*q\s*=/i
+      QUALITY_SPLITTER    = /\s*;\s*q\s*=/i.freeze
+      QUALITY_PATTERN     = '\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?'.freeze
+
       QVALUE_REGEX        = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
       QVALUE_DEFAULT      = 1.00
       QVALUE              = 'q'.freeze
 
-      # --
+      #--
       # RFC 2616, sec. 4.2:
       # message-header = field-name ":" [ field-value ]
       # field-name     = token
@@ -33,11 +35,12 @@ module Rack #:nodoc:
       # field-content MAY be replaced with a single SP before interpreting the
       # field value or forwarding the message downstream.
       #
-      # ++
+      #++
 
       PAIR_SPLITTER       = /\=/.freeze
       COMMA_SPLITTER      = /,\s*/.freeze
       SEMICOLON_SPLITTER  = /\s*;\s*/.freeze
+      HYPHEN_SPLITTER     = /-/.freeze
 
       TOKEN = "A-Za-z0-9#{Regexp.escape('!#$&%\'*+-.^_`|~')}".freeze
 
@@ -75,7 +78,18 @@ module Rack #:nodoc:
         }
       end
 
-      HTTP_ACCEPT_SNIPPET_REGEX = /^([#{TOKEN}]+)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/io.freeze
+      HTTP_ACCEPT_SNIPPET_REGEX = /^([#{TOKEN}]+)#{QUALITY_PATTERN}\s*$/o.freeze
+
+      #:stopdoc:
+
+      def parse_header(header, regex)
+        header.split(COMMA_SPLITTER).map! do |entry|
+          raise unless regex === entry
+          [$1, ($2 || QVALUE_DEFAULT).to_f]
+        end
+      end
+
+      #:startdoc:
 
       # ==== Parameters
       # header<String>:: The Accept-Encoding request-header.
@@ -87,15 +101,13 @@ module Rack #:nodoc:
       #   one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Result of parsing. An Array with *downcased* Content-Codings
+      # Result of parsing. An Array with wildcards / *downcased* Content-Codings
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_encoding(header)
-        header.downcase.split(COMMA_SPLITTER).map! { |entry|
-          raise ArgumentError, "Malformed Accept-Encoding header: #{entry.inspect}" unless
-          HTTP_ACCEPT_SNIPPET_REGEX === entry
-          [$1, ($2 || QVALUE_DEFAULT).to_f]
-        }
+        parse_header(header.downcase, HTTP_ACCEPT_SNIPPET_REGEX)
+      rescue
+        raise ArgumentError, "Malformed Accept-Encoding header: #{header.inspect}"
       end
 
       # ==== Parameters
@@ -171,15 +183,13 @@ module Rack #:nodoc:
       #   one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Result of parsing, an Array with *downcased* Charsets and
+      # Result of parsing, an Array with wildcards / *downcased* Charsets and
       # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       def parse_http_accept_charset(header)
-        header.downcase.split(COMMA_SPLITTER).map! { |entry|
-          raise ArgumentError, "Malformed Accept-Charset header: #{entry.inspect}" unless
-          HTTP_ACCEPT_SNIPPET_REGEX === entry
-          [$1, ($2 || QVALUE_DEFAULT).to_f]
-        }
+        parse_header(header.downcase, HTTP_ACCEPT_SNIPPET_REGEX)
+      rescue
+        raise ArgumentError, "Malformed Accept-Charset header: #{header.inspect}"
       end
 
       # ==== Parameters
@@ -243,13 +253,17 @@ module Rack #:nodoc:
       # RFC 2616, sec. 3.10:
       # White space is not allowed within the tag and all tags are case-
       # insensitive.
+      #
+      # RFC 4647, sec. 2.1
+      # Note that the ABNF [RFC4234] in [RFC2616] is incorrect, since it disallows the
+      # use of digits anywhere in the 'language-range' (see [RFC2616errata]).
       #++
 
-      HTTP_ACCEPT_LANGUAGE_REGEX = /^(\*|[a-z]{1,8}(?:-[a-z]{1,8})*)\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?\s*$/.freeze
+      HTTP_ACCEPT_LANGUAGE_REGEX              = /^(\*|[a-z]{1,8}(?:-[a-z\d]{1,8})*)#{QUALITY_PATTERN}\s*$/io.freeze
+      HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX = /^(\*|[a-z]{1,8})(?:-[a-z\d]{1,8})*#{QUALITY_PATTERN}\s*$/o.freeze
 
       # ==== Parameters
       # header<String>:: The Accept-Language request-header.
-      # tags<Integer>:: Optional number of Language-Ranges to extract.
       #
       # ==== Raises
       # ArgumentError::
@@ -258,17 +272,103 @@ module Rack #:nodoc:
       #   pattern, one of quality factors is malformed etc.
       #
       # ==== Returns
-      # Result of parsing. The flattened Array with *downcased*
-      # Language-Ranges (as +Strings+) and associated quality factors (qvalues).
-      # Default qvalue is 1.0.
+      # Result of parsing. An Array with wildcards / Language-Tags (as +Strings+)
+      # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
-      def parse_http_accept_language(header, ranges = 0)
-        header.downcase.split(COMMA_SPLITTER).map! { |entry|
-          raise ArgumentError, "Malformed Accept-Language header: #{entry.inspect}" unless
-          HTTP_ACCEPT_LANGUAGE_REGEX === entry
-          qvalue = ($2 || QVALUE_DEFAULT).to_f
-          $1.split('-')[0..ranges-1] << qvalue
-        }
+      # ==== Notes
+      # * It uses {Basic Language-Range pattern}[http://tools.ietf.org/html/rfc4647#section-2.1].
+      # * It does *not* perform 'convenient transformations' (downcasing of primary tags etc).
+      #   In other words, it parses Accept-Language header in unpretentious manner.
+      #
+      def parse_http_accept_language(header)
+        parse_header(header, HTTP_ACCEPT_LANGUAGE_REGEX)
+      rescue
+        raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
+      end
+
+      # ==== Parameters
+      # header<String>:: The Accept-Language request-header.
+      #
+      # ==== Raises
+      # ArgumentError::
+      #   Syntax of the header passed is bad.
+      #   For example, one of Language-Ranges is not in a RFC 'Language-Range'
+      #   pattern, one of quality factors is malformed etc.
+      #
+      # ==== Returns
+      # Result of parsing. An Array with wildcards / 'locales' (as +Strings+)
+      # and associated quality factors (qvalues). Default qvalue is 1.0.
+      #
+      # ==== Notes
+      # * Validation pattern is same as in Utils#parse_http_accept_language
+      # * It *downcases* primary tags (aka 'locales').
+      # * It does *not* reduce the result, because of:
+      #   - the difference between empty header and header composed with zero-qualified tags.
+      #   - the *possible* difference between the 'best locale lookup' algorithms.
+      #
+      def parse_acceptable_locales(header)
+        parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
+      rescue
+        raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
+      end
+
+      #:stopdoc
+
+      language    = '([a-z]{2,8})'
+      scrypt      = '(?:-([a-z]{4}))?'
+      region      = '(?:-([a-z]{2}|\d{3}))?'
+      variants    = '((?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*)'
+      extensions  = '(?:-[a-wy-z\d]{1}(?:-[a-z\d]{2,8})+)*'
+      privateuse  = '(?:-x(?:-[a-z\d]{1,8})+)?'
+
+      #:startdoc:
+
+      LANGUAGE_TAG_REGEX                = /^#{language}#{scrypt}#{region}#{variants}#{extensions}#{privateuse}$/o.freeze
+      LANGUAGE_TAG_PRIVATEUSE_REGEX     = /^x(?:-[a-z\d]{1,8})+$/.freeze
+      LANGUAGE_TAG_GRANDFATHERED_REGEX  = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
+
+      def parse_extended_language_tag(tag)
+        raise NotImplementedError
+      end
+
+      # ==== Parameters
+      # tag<String>:: The Language-Tag snippet.
+      #
+      # ==== Raises
+      # ArgumentError:: The Language Tag is malformed.
+      #
+      # ==== Returns
+      # Array::
+      #   Result of parsing, an Array with the definitive language information:
+      #   * language (as +String+, downcased)
+      #   * script (as +String+, capitalized) or +nil+,
+      #   * region (as +String+, upcased) or +nil+
+      #   * tuple of downcased variants.
+      #
+      # ==== Notes
+      # As of now, it *does not* perform *strong* validation of 'singlethons',
+      # i.e, checks only ABNF conformance, and treats 'en-a-xxx-b-yyy-a-zzz' as
+      # well-formed Language-Tag (but it's better than nothing, whether or no).
+      #
+      def parse_language_tag(tag)
+        case t = tag.downcase
+        when LANGUAGE_TAG_REGEX
+
+          language  = $1
+          script    = $2
+          region    = $3
+          variants  = $4
+
+          script.capitalize! if script
+          region.upcase! if region
+          variants = variants && variants.split(HYPHEN_SPLITTER)[1..-1]
+          variants ? [language, script, region, *variants] : [language, script, region]
+
+        when LANGUAGE_TAG_GRANDFATHERED_REGEX, LANGUAGE_TAG_PRIVATEUSE_REGEX
+          t.split(HYPHEN_SPLITTER)
+        else
+          raise ArgumentError, "Malformed Language-Tag: #{tag.inspect}"
+        end
       end
 
       # ==== Parameters
@@ -289,13 +389,16 @@ module Rack #:nodoc:
         header.split(COMMA_SPLITTER).map! { |entry| parse_media_range_and_qvalue(entry) }
       end
 
-      MEDIA_RANGE_REGEX = /^([#{TOKEN}]+)\/([#{TOKEN}]+)\s*(?:;|$)/o.freeze
+      MEDIA_RANGE_REGEX = /^([#{TOKEN}]+)\/([#{TOKEN}]+)\s*(?:;|$)/io.freeze
 
-      # :stopdoc:
+      #:stopdoc:
 
       def split_mime_type(thing)
         raise ArgumentError, "Malformed MIME-Type: #{thing}" unless thing =~ MEDIA_RANGE_REGEX
-        type, subtype, snippet = $1, $2, $'
+
+        type    = $1
+        subtype = $2
+        snippet = $'
 
         raise ArgumentError, "Malformed MIME-Type: #{thing}" if
           type == Const::WILDCARD &&
@@ -347,7 +450,7 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # thing<String>:: The MIME-Type snippet.
+      # thing<String>:: The MIME-Type snippet (from the Accept request-header).
       #
       # ==== Returns
       # Array[String, String, Hash, Float]::
@@ -369,7 +472,7 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # thing<String>:: The MIME-Type snippet.
+      # thing<String>:: The MIME-Type snippet (from the Accept request-header).
       #
       # ==== Returns
       # Array[String, String, Hash, Float, Hash]::
@@ -399,7 +502,6 @@ module Rack #:nodoc:
           # default value is q=1.
 
           if has_qvalue
-            #raise ArgumentError, "Malformed accept-extension: #{pair}" if v && v.empty? #necessary?
             accept_extension[k] = v || true # token [ "=" ( token | quoted-string ) ] - i.e, "v" is OPTIONAL.
           else
             k.downcase!

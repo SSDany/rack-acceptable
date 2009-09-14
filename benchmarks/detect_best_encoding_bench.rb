@@ -9,8 +9,9 @@ HEADERS << 'compress;q=0.5,*;q=1.0'
 HEADERS << 'compress;q=0.5,gzip;q=1.0'
 HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,*;q=0.5'
 HEADERS << 'compress;q=0.5,gzip;q=1.0,deflate,identity;q=0.1'
+HEADERS << 'a;q=0.5,b;q=1.0,c,d;q=0.1,e;q=0.09,f;q=0.08,g;q=0.07'
 
-PROVIDES = %w(compress gzip identity)
+PROVIDES = %w(compress gzip identity d)
 
 TIMES = ARGV[0] ? ARGV[0].to_i : 100_000
 
