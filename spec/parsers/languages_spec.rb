@@ -174,6 +174,14 @@ describe Rack::Acceptable::Languages, ".parse_locales" do
       qvalues.should == [['en', 0.5]]
     end
 
+    it "ignores 'i' and 'x' singletons" do
+      qvalues = Rack::Acceptable::Languages.parse_locales('x-pig-latin;q=0.1,en-GB;q=0.5')
+      qvalues.should == [['en', 0.5]]
+
+      qvalues = Rack::Acceptable::Languages.parse_locales('en-GB;q=0.5, i-enochian;q=0.03')
+      qvalues.should == [['en', 0.5]]
+    end
+
   end
 
   it_should_behave_like 'simple parser of 1#(element) lists'

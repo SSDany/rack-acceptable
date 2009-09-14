@@ -64,7 +64,9 @@ module Rack #:nodoc:
       #   - the *possible* difference between the 'best locale lookup' algorithms.
       #
       def parse_locales(header)
-        Utils.parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
+        ret = Utils.parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
+        ret.reject! { |tag,_| tag == 'i' || tag == 'x' }
+        ret
       rescue
         raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
       end
@@ -106,7 +108,7 @@ module Rack #:nodoc:
       #     - primary tag and subtags (downcased)
       #
       # ==== Notes
-      # As of now, it *does not* perform *strong* validation of 'singlethons',
+      # As of now, it *does not* perform *strong* validation of 'singletons',
       # i.e, checks only ABNF conformance, and treats 'en-a-xxx-b-yyy-a-zzz' as
       # well-formed Language-Tag (but it's better than nothing, whether or no).
       #
