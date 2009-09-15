@@ -19,6 +19,9 @@ module Rack #:nodoc:
       HTTP_ACCEPT_LANGUAGE_REGEX              = /^\s*(\*|[a-z]{1,8}(?:-[a-z\d]{1,8})*)#{Utils::QUALITY_PATTERN}\s*$/io.freeze
       HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX = /^\s*(\*|[a-z]{1,8})(?:-[a-z\d]{1,8})*#{Utils::QUALITY_PATTERN}\s*$/o.freeze
 
+      PRIVATEUSE = 'x'.freeze
+      GRANDFATHERED = 'i'.freeze
+
       # ==== Parameters
       # header<String>:: The Accept-Language request-header.
       #
@@ -65,7 +68,7 @@ module Rack #:nodoc:
       #
       def parse_locales(header)
         ret = Utils.parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
-        ret.reject! { |tag,_| tag == 'i' || tag == 'x' }
+        ret.reject! { |tag,_| tag == PRIVATEUSE || tag == GRANDFATHERED }
         ret
       rescue
         raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
@@ -87,7 +90,37 @@ module Rack #:nodoc:
       LANGUAGE_TAG_GRANDFATHERED_REGEX  = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
 
       def parse_extended_language_tag(tag)
-        raise NotImplementedError
+
+        # RFC 4646, sec. 2.2.9:
+        # Check that the tag and all of its subtags, including extension and
+        # private use subtags, conform to the ABNF or that the tag is on the
+        # list of grandfathered tags.
+        #
+        # Check that singleton subtags that identify extensions do not
+        # repeat. For example, the tag "en-a-xx-b-yy-a-zz" is not well-
+        # formed.
+
+        data = parse_language_tag(tag)
+        return data if data.first == PRIVATEUSE || data.first == GRANDFATHERED
+
+        singleton = nil
+        extensions = {}
+        components = tag.downcase.split(Utils::HYPHEN_SPLITTER)[data.flatten.nitems..-1]
+
+        while (c = components.shift) && c != PRIVATEUSE
+          if c.size == 1
+
+            raise ArgumentError,
+              "Malformed Language-Tag (repeated singleton: #{c.inspect}): #{tag.inspect}" if
+              extensions.key?(c)
+
+            extensions[singleton = c] = []
+          else
+            extensions[singleton] << c
+          end
+        end
+
+        data << extensions << components
       end
 
       # ==== Parameters
@@ -103,7 +136,7 @@ module Rack #:nodoc:
       #     - language (as +String+, downcased; aka 'locale')
       #     - script (as +String+, capitalized) or +nil+,
       #     - region (as +String+, upcased) or +nil+
-      #     - downcased variants.
+      #     - downcased variants (an +Array+ or +nil+).
       #   * when there's a 'privateuse' or 'grandfathered' Language-Tag:
       #     - primary tag and subtags (downcased)
       #
@@ -124,7 +157,7 @@ module Rack #:nodoc:
           script.capitalize! if script
           region.upcase! if region
           variants = variants && variants.split(Utils::HYPHEN_SPLITTER)[1..-1]
-          variants ? [language, script, region, *variants] : [language, script, region]
+          [language, script, region, variants]
 
         when LANGUAGE_TAG_GRANDFATHERED_REGEX, LANGUAGE_TAG_PRIVATEUSE_REGEX
           t.split(Utils::HYPHEN_SPLITTER)

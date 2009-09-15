@@ -1,36 +1,32 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Languages, '.parse_language_tag' do
-
-  before :all do
-    @helper = lambda { |tag| Rack::Acceptable::Languages.parse_language_tag(tag) }
-  end
+shared_examples_for "simple Language-Tag parser" do
 
   describe "when there's a full Language-Tag" do
 
     it "extracts language data (language, script, region and variants)" do
-      @helper[ 'de'               ].should == ['de', nil    , nil                       ]
-      @helper[ 'fr'               ].should == ['fr', nil    , nil                       ]
-      @helper[ 'de-DE'            ].should == ['de', nil    , 'DE'                      ]
-      @helper[ 'en-US'            ].should == ['en', nil    , 'US'                      ]
-      @helper[ 'zh-Hant'          ].should == ['zh', 'Hant' , nil                       ]
-      @helper[ 'zh-Hans'          ].should == ['zh', 'Hans' , nil                       ]
-      @helper[ 'zh-Hans-CN'       ].should == ['zh', 'Hans' , 'CN'                      ]
-      @helper[ 'sr-Latn-CS'       ].should == ['sr', 'Latn' , 'CS'                      ]
-      @helper[ 'sl-rozaj'         ].should == ['sl', nil    , nil   , 'rozaj'           ]
-      @helper[ 'sl-nedis'         ].should == ['sl', nil    , nil   , 'nedis'           ]
-      @helper[ 'sl-rozaj-nedis'   ].should == ['sl', nil    , nil   , 'rozaj', 'nedis'  ]
-      @helper[ 'de-CH-1901'       ].should == ['de', nil    , 'CH'  , '1901'            ]
-      @helper[ 'sl-IT-nedis'      ].should == ['sl', nil    , 'IT'  , 'nedis'           ]
-      @helper[ 'sl-Latn-IT-nedis' ].should == ['sl', 'Latn' , 'IT'  , 'nedis'           ]
+      @parser[ 'de'               ].should == ['de', nil    , nil   , nil                 ]
+      @parser[ 'fr'               ].should == ['fr', nil    , nil   , nil                 ]
+      @parser[ 'de-DE'            ].should == ['de', nil    , 'DE'  , nil                 ]
+      @parser[ 'en-US'            ].should == ['en', nil    , 'US'  , nil                 ]
+      @parser[ 'zh-Hant'          ].should == ['zh', 'Hant' , nil   , nil                 ]
+      @parser[ 'zh-Hans'          ].should == ['zh', 'Hans' , nil   , nil                 ]
+      @parser[ 'zh-Hans-CN'       ].should == ['zh', 'Hans' , 'CN'  , nil                 ]
+      @parser[ 'sr-Latn-CS'       ].should == ['sr', 'Latn' , 'CS'  , nil                 ]
+      @parser[ 'sl-rozaj'         ].should == ['sl', nil    , nil   , ['rozaj' ]          ]
+      @parser[ 'sl-nedis'         ].should == ['sl', nil    , nil   , ['nedis' ]          ]
+      @parser[ 'sl-rozaj-nedis'   ].should == ['sl', nil    , nil   , ['rozaj','nedis']   ]
+      @parser[ 'de-CH-1901'       ].should == ['de', nil    , 'CH'  , ['1901']            ]
+      @parser[ 'sl-IT-nedis'      ].should == ['sl', nil    , 'IT'  , ['nedis']           ]
+      @parser[ 'sl-Latn-IT-nedis' ].should == ['sl', 'Latn' , 'IT'  , ['nedis']           ]
     end
 
-    it "conveniently transforms all components" do
-      @helper[ 'DE'               ].should == ['de', nil    , nil           ]
-      @helper[ 'de-de'            ].should == ['de', nil    , 'DE'          ]
-      @helper[ 'zh-hAnt'          ].should == ['zh', 'Hant' , nil           ]
-      @helper[ 'sl-RoZaj'         ].should == ['sl', nil    , nil , 'rozaj' ]
-      @helper[ 'sl-Latn-it-NEDIS' ].should == ['sl', 'Latn' , 'IT', 'nedis' ]
+    it "conveniently transforms language, script, region and variants" do
+      @parser[ 'DE'               ].should == ['de', nil    , nil   , nil       ]
+      @parser[ 'de-de'            ].should == ['de', nil    , 'DE'  , nil       ]
+      @parser[ 'zh-hAnt'          ].should == ['zh', 'Hant' , nil   , nil       ]
+      @parser[ 'sl-RoZaj'         ].should == ['sl', nil    , nil   , ['rozaj'] ]
+      @parser[ 'sl-Latn-it-NEDIS' ].should == ['sl', 'Latn' , 'IT'  , ['nedis'] ]
     end
 
   end
@@ -38,13 +34,13 @@ describe Rack::Acceptable::Languages, '.parse_language_tag' do
   describe "when there's a 'privateuse' Language-Tag" do
 
     it "parses it into a simple Array" do
-      @helper[ 'x-private'            ].should == ['x', 'private']
-      @helper[ 'x-private1-private2'  ].should == ['x', 'private1', 'private2']
+      @parser[ 'x-private'            ].should == ['x', 'private']
+      @parser[ 'x-private1-private2'  ].should == ['x', 'private1', 'private2']
     end
 
     it "downcases primary tag and subtags" do
-      @helper[ 'X-Private'            ].should == ['x', 'private']
-      @helper[ 'X-pRivate1-pRivate2'  ].should == ['x', 'private1', 'private2']
+      @parser[ 'X-Private'            ].should == ['x', 'private']
+      @parser[ 'X-pRivate1-pRivate2'  ].should == ['x', 'private1', 'private2']
     end
 
   end
@@ -52,13 +48,13 @@ describe Rack::Acceptable::Languages, '.parse_language_tag' do
   describe "when there's a 'grandfathered' Language-Tag" do
 
     it "parses it into a simple Array" do
-      @helper[ 'i-enochian'   ].should == ['i', 'enochian']
-      @helper[ 'i-some-thing' ].should == ['i', 'some', 'thing']
+      @parser[ 'i-enochian'   ].should == ['i', 'enochian']
+      @parser[ 'i-some-thing' ].should == ['i', 'some', 'thing']
     end
 
     it "downcases primary tag and subtags" do
-      @helper[ 'I-Enochian'   ].should == ['i', 'enochian']
-      @helper[ 'I-sOme-thing' ].should == ['i', 'some', 'thing']
+      @parser[ 'I-Enochian'   ].should == ['i', 'enochian']
+      @parser[ 'I-sOme-thing' ].should == ['i', 'some', 'thing']
     end
 
   end
@@ -84,9 +80,44 @@ describe Rack::Acceptable::Languages, '.parse_language_tag' do
       'i-veryverylong',
       'i-@@' 
     ].each do |tag|
-      lambda { @helper['en-veryverylong'] }.should raise_error ArgumentError, %r{Malformed Language-Tag}
+      lambda { @parser['en-veryverylong'] }.should raise_error ArgumentError, %r{Malformed Language-Tag}
     end
 
+  end
+
+end
+
+describe Rack::Acceptable::Languages, '.parse_language_tag' do
+
+  before :all do
+    @parser = lambda { |tag| Rack::Acceptable::Languages.parse_language_tag(tag) }
+  end
+
+  it_should_behave_like "simple Language-Tag parser"
+
+end
+
+describe Rack::Acceptable::Languages, '.parse_extended_language_tag' do
+
+  before :all do
+    @parser = lambda { |tag| Rack::Acceptable::Languages.parse_extended_language_tag(tag)[0..3] }
+  end
+
+  it_should_behave_like "simple Language-Tag parser"
+
+  it "extracts extension into a Hash" do
+    extension = Rack::Acceptable::Languages.parse_extended_language_tag('en-GB-a-xxx-yyy-b-zzz-x-private')[4]
+    extension.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
+  end
+
+  it "extracts privateuse data into an Array" do
+    extension = Rack::Acceptable::Languages.parse_extended_language_tag('en-GB-x-en-private')[5]
+    extension.should == ['en', 'private']
+  end
+
+  it "raises an ArgumentError when there's a repeated singleton" do
+    lambda { @parser['en-GB-a-xxx-b-yyy-a-zzz-x-private'] }.should raise_error ArgumentError, %r{Malformed Language-Tag}
+    lambda { @parser['en-GB-a-xxx-b-yyy-A-zzz-x-private'] }.should raise_error ArgumentError, %r{Malformed Language-Tag}
   end
 
 end
