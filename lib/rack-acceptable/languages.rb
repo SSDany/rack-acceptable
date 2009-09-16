@@ -4,6 +4,9 @@ module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Languages
 
+      path = IO.read(::File.expand_path(::File.join(::File.dirname(__FILE__), 'data', 'grandfathered_language_tags.yml')))
+      GRANDFATHERED_TAGS = YAML.load(path)
+
       module_function
 
       #--
@@ -79,17 +82,46 @@ module Rack #:nodoc:
       language    = '([a-z]{2,8})'
       scrypt      = '(?:-([a-z]{4}))?'
       region      = '(?:-([a-z]{2}|\d{3}))?'
-      variants    = '((?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*)'
+      variants    = '(?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*'
       extensions  = '(?:-[a-wy-z\d]{1}(?:-[a-z\d]{2,8})+)*'
       privateuse  = '(?:-x(?:-[a-z\d]{1,8})+)?'
 
       #:startdoc:
 
-      LANGUAGE_TAG_REGEX                = /^#{language}#{scrypt}#{region}#{variants}#{extensions}#{privateuse}$/o.freeze
-      LANGUAGE_TAG_PRIVATEUSE_REGEX     = /^x(?:-[a-z\d]{1,8})+$/.freeze
-      LANGUAGE_TAG_GRANDFATHERED_REGEX  = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
+      LANGTAG_EXTENDED_REGEX  = /^#{language}#{scrypt}#{region}(#{variants}#{extensions}#{privateuse})$/o.freeze
+      LANGTAG_REGEX           = /^#{language}#{scrypt}#{region}(#{variants})#{extensions}#{privateuse}$/o.freeze
+      PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/.freeze
+      GRANDFATHERED_REGEX     = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
 
-      def parse_extended_language_tag(tag)
+      def privateuse?(tag)
+        PRIVATEUSE_REGEX === tag
+      end
+
+      def grandfathered?(tag)
+        GRANDFATHERED_TAGS.key?(tag) || GRANDFATHERED_TAGS.key?(tag.downcase)
+      end
+
+      def irregular_grandfathered?(tag)
+        return false unless tr = GRANDFATHERED_TAGS[tag] || GRANDFATHERED_TAGS[tag.downcase]
+        tr.at(1)
+      end
+
+      # ==== Parameters
+      # tag<String>:: The Language-Tag snippet.
+      #
+      # ==== Returns
+      # Array or nil::
+      #   It returns +nil+, when the Language-Tag passed is malformed
+      #   (incl. 'repeated snippet' situation), grandfathered of privateuse);
+      #   otherwise you'll get an +Array+ with:
+      #   * language (as +String+, downcased; aka 'locale')
+      #   * script (as +String+, capitalized) or +nil+,
+      #   * region (as +String+, upcased) or +nil+
+      #   * downcased variants (+Array+, could be empty).
+      #   * extensions (+Hash+, could be empty).
+      #   * privateuse (+Array+, could be empty).
+      #
+      def extract_full_language_info(langtag)
 
         # RFC 4646, sec. 2.2.9:
         # Check that the tag and all of its subtags, including extension and
@@ -100,70 +132,55 @@ module Rack #:nodoc:
         # repeat. For example, the tag "en-a-xx-b-yy-a-zz" is not well-
         # formed.
 
-        data = parse_language_tag(tag)
-        return data if data.first == PRIVATEUSE || data.first == GRANDFATHERED
+        language, script, region, components = extract_language_info(langtag, LANGTAG_EXTENDED_REGEX)
+        return nil unless language
 
         singleton = nil
         extensions = {}
-        components = tag.downcase.split(Utils::HYPHEN_SPLITTER)[data.flatten.nitems..-1]
+        variants = []
 
-        while (c = components.shift) && c != PRIVATEUSE
+        while c = components.shift
           if c.size == 1
-
-            raise ArgumentError,
-              "Malformed Language-Tag (repeated singleton: #{c.inspect}): #{tag.inspect}" if
-              extensions.key?(c)
-
+            break if c == PRIVATEUSE
+            return nil if extensions.key?(c)
             extensions[singleton = c] = []
-          else
+          elsif singleton
             extensions[singleton] << c
+          else
+            variants << c
           end
         end
 
-        data << extensions << components
+        [language, script, region, variants, extensions, components]
       end
 
       # ==== Parameters
       # tag<String>:: The Language-Tag snippet.
-      #
-      # ==== Raises
-      # ArgumentError:: The Language Tag is malformed.
+      # regex<Regexgp>:: Use it only if you know what you're doing.
       #
       # ==== Returns
-      # Array::
-      #   Basic components of the Language-Tag:
-      #   * when there's a full Language-Tag:
-      #     - language (as +String+, downcased; aka 'locale')
-      #     - script (as +String+, capitalized) or +nil+,
-      #     - region (as +String+, upcased) or +nil+
-      #     - downcased variants (an +Array+ or +nil+).
-      #   * when there's a 'privateuse' or 'grandfathered' Language-Tag:
-      #     - primary tag and subtags (downcased)
+      # Array or nil::
+      #   It returns +nil+, when the Language-Tag passed does not
+      #   conform the 'langtag' ABNF (malformed, grandfathered of privateuse);
+      #   otherwise you'll get an +Array+ with:
+      #   * language (as +String+, downcased; aka 'locale')
+      #   * script (as +String+, capitalized) or +nil+,
+      #   * region (as +String+, upcased) or +nil+
+      #   * downcased variants (+Array+, could be empty).
       #
-      # ==== Notes
-      # As of now, it *does not* perform *strong* validation of 'singletons',
-      # i.e, checks only ABNF conformance, and treats 'en-a-xxx-b-yyy-a-zzz' as
-      # well-formed Language-Tag (but it's better than nothing, whether or no).
-      #
-      def parse_language_tag(tag)
-        case t = tag.downcase
-        when LANGUAGE_TAG_REGEX
+      def extract_language_info(langtag, regex = LANGTAG_REGEX)
+        tag = langtag.downcase
+        return nil unless regex === tag
 
-          language  = $1
-          script    = $2
-          region    = $3
-          variants  = $4
+        language    = $1
+        script      = $2
+        region      = $3
+        components  = $4
 
-          script.capitalize! if script
-          region.upcase! if region
-          variants = variants && variants.split(Utils::HYPHEN_SPLITTER)[1..-1]
-          [language, script, region, variants]
-
-        when LANGUAGE_TAG_GRANDFATHERED_REGEX, LANGUAGE_TAG_PRIVATEUSE_REGEX
-          t.split(Utils::HYPHEN_SPLITTER)
-        else
-          raise ArgumentError, "Malformed Language-Tag: #{tag.inspect}"
-        end
+        script.capitalize! if script
+        region.upcase! if region
+        components = components && components.split(Utils::HYPHEN_SPLITTER)[1..-1]
+        [language, script, region, components || []]
       end
 
     end
