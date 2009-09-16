@@ -80,7 +80,7 @@ module Rack #:nodoc:
       #:stopdoc
 
       language    = '([a-z]{2,8})'
-      scrypt      = '(?:-([a-z]{4}))?'
+      script      = '(?:-([a-z]{4}))?'
       region      = '(?:-([a-z]{2}|\d{3}))?'
       variants    = '(?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*'
       extensions  = '(?:-[a-wy-z\d]{1}(?:-[a-z\d]{2,8})+)*'
@@ -88,8 +88,8 @@ module Rack #:nodoc:
 
       #:startdoc:
 
-      LANGTAG_EXTENDED_REGEX  = /^#{language}#{scrypt}#{region}(#{variants}#{extensions}#{privateuse})$/o.freeze
-      LANGTAG_REGEX           = /^#{language}#{scrypt}#{region}(#{variants})#{extensions}#{privateuse}$/o.freeze
+      LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(#{variants}#{extensions}#{privateuse})$/o.freeze
+      LANGTAG_REGEX           = /^#{language}#{script}#{region}(#{variants})#{extensions}#{privateuse}$/o.freeze
       PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/.freeze
       GRANDFATHERED_REGEX     = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
 
@@ -112,7 +112,7 @@ module Rack #:nodoc:
       # ==== Returns
       # Array or nil::
       #   It returns +nil+, when the Language-Tag passed is malformed
-      #   (incl. 'repeated snippet' situation), grandfathered of privateuse);
+      #   (incl. 'repeated snippet' situation), grandfathered of privateuse;
       #   otherwise you'll get an +Array+ with:
       #   * language (as +String+, downcased; aka 'locale')
       #   * script (as +String+, capitalized) or +nil+,
