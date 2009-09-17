@@ -90,7 +90,7 @@ module Rack #:nodoc:
 
       LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(#{variants}#{extensions}#{privateuse})$/o.freeze
       LANGTAG_REGEX           = /^#{language}#{script}#{region}(#{variants})#{extensions}#{privateuse}$/o.freeze
-      PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/.freeze
+      PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/i.freeze
       GRANDFATHERED_REGEX     = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
 
       def privateuse?(tag)

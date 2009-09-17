@@ -113,6 +113,7 @@ end
 describe Rack::Acceptable::Languages, "misc" do
 
   it "knows about 'privateuse' Language-Tags" do
+    Rack::Acceptable::Languages.privateuse?('X-private').should == true
     Rack::Acceptable::Languages.privateuse?('x-private').should == true
     Rack::Acceptable::Languages.privateuse?('en-GB').should == false
     Rack::Acceptable::Languages.privateuse?('x-veryverylong').should == false
@@ -133,6 +134,9 @@ describe Rack::Acceptable::Languages, "misc" do
     Rack::Acceptable::Languages.irregular_grandfathered?('i-hak').should == true
     Rack::Acceptable::Languages.irregular_grandfathered?('I-Hak').should == true
     Rack::Acceptable::Languages.irregular_grandfathered?('i-enochian').should == false
+
+    Rack::Acceptable::Languages.irregular_grandfathered?('i-irregular').should == false      # not a grandfathred Language-Tag
+    Rack::Acceptable::Languages.irregular_grandfathered?('i-one-two-three').should == false  # not a grandfathred Language-Tag
   end
 
 end
