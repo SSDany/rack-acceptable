@@ -20,6 +20,9 @@ module Rack #:nodoc:
       ENV_PARSED_MIME_TYPES     = 'rack-acceptable.mime-types'.freeze
       ENV_PARSED_MEDIA_RANGES   = 'rack-acceptable.media-ranges'.freeze
 
+      ENV_PREFERRED_LOCALES     = 'rack-acceptable.preferred_locales'.freeze
+      ENV_UNDESIRABLE_LOCALES   = 'rack-acceptable.undesirable_locales'.freeze
+
     end
   end
 end
