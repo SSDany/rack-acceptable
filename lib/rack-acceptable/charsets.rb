@@ -79,9 +79,7 @@ module Rack #:nodoc:
           end
         end
 
-        specifics = candidates & provides
-        return specifics.first unless specifics.empty?
-        nil
+        (candidates & provides).first
       end
 
     end

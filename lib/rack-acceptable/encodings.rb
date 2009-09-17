@@ -43,7 +43,7 @@ module Rack #:nodoc:
         return nil if provides.empty?
 
         identity = provides.include?(Const::IDENTITY) # presence of 'identity' in available content-codings
-        identity_or_wildcard_prohibited = false # explicit 'identity;q=0' or '*;q=0'
+        identity_or_wildcard_prohibited = nil # explicit 'identity;q=0' or '*;q=0'
 
         # RFC 2616, sec. 14.3:
         # If no Accept-Encoding field is present in a request, the server
@@ -84,8 +84,8 @@ module Rack #:nodoc:
 
         end
 
-        specifics = candidates & provides
-        return specifics.first unless specifics.empty?
+        candidate = (candidates & provides).first
+        return candidate if candidate
         return Const::IDENTITY if identity && !identity_or_wildcard_prohibited
         nil
       end
