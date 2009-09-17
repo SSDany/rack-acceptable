@@ -19,8 +19,7 @@ module Rack #:nodoc:
     autoload :Languages       , 'rack-acceptable/languages'
     autoload :MIMETypes       , 'rack-acceptable/mimetypes'
 
-    autoload :RequestHelpers  , 'rack-acceptable/helpers/request'
-    autoload :ResponseHelpers , 'rack-acceptable/helpers/response'
+    autoload :Helpers         , 'rack-acceptable/helpers'
 
   end
 end

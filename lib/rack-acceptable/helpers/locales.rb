@@ -1,6 +1,6 @@
 module Rack #:nodoc:
   module Acceptable #:nodoc:
-    module ResponseHelpers
+    module Helpers::Locales
 
     end
   end
