@@ -34,7 +34,6 @@ module Rack #:nodoc:
         type    = $1
         subtype = $2
         snippet = $'
-
         raise ArgumentError, "Malformed MIME-Type: #{thing}" if
           type == Const::WILDCARD &&
           subtype != Const::WILDCARD
@@ -81,7 +80,7 @@ module Rack #:nodoc:
       def parse_media_range(thing)
         thing =~ Utils::QUALITY_SPLITTER
         type, subtype, snippet = split_mime_type($` || thing)
-        return type, subtype, parse_media_range_parameter(snippet)
+        [type, subtype, parse_media_range_parameter(snippet)]
       end
 
       # ==== Parameters
@@ -103,7 +102,7 @@ module Rack #:nodoc:
 
         raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ Utils::QVALUE_REGEX
         type, subtype, snippet = split_mime_type(range)
-        return type, subtype, parse_media_range_parameter(snippet), (qvalue || Utils::QVALUE_DEFAULT).to_f
+        [type, subtype, parse_media_range_parameter(snippet), (qvalue || Utils::QVALUE_DEFAULT).to_f]
       end
 
       # ==== Parameters
@@ -151,7 +150,7 @@ module Rack #:nodoc:
 
         end
 
-        return type, subtype, params, qvalue, accept_extension
+        [type, subtype, params, qvalue, accept_extension]
       end
 
       # ==== Parameters
@@ -220,7 +219,7 @@ module Rack #:nodoc:
           index = -i
         end
 
-        return quality, rate, specificity, index
+        [quality, rate, specificity, index]
       end
 
       # ==== Parameters

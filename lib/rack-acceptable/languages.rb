@@ -88,7 +88,7 @@ module Rack #:nodoc:
 
       #:startdoc:
 
-      LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(#{variants}#{extensions}#{privateuse})$/o.freeze
+      LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(?=#{variants}#{extensions}#{privateuse}$)/o.freeze
       LANGTAG_REGEX           = /^#{language}#{script}#{region}(#{variants})#{extensions}#{privateuse}$/o.freeze
       PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/i.freeze
       GRANDFATHERED_REGEX     = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
@@ -132,31 +132,43 @@ module Rack #:nodoc:
         # repeat. For example, the tag "en-a-xx-b-yy-a-zz" is not well-
         # formed.
 
-        language, script, region, components = extract_language_info(langtag, LANGTAG_EXTENDED_REGEX)
-        return nil unless language
+        tag = langtag.downcase
+        return nil unless LANGTAG_EXTENDED_REGEX === tag
 
-        singleton = nil
-        extensions = {}
-        variants = []
+        language    = $1
+        script      = $2
+        region      = $3
+        components  = $'
 
-        while c = components.shift
-          if c.size == 1
-            break if c == PRIVATEUSE
-            return nil if extensions.key?(c)
-            extensions[singleton = c] = []
-          elsif singleton
-            extensions[singleton] << c
-          else
-            variants << c
+        script.capitalize! if script
+        region.upcase! if region
+
+        if components = components && components.split(Utils::HYPHEN_SPLITTER)[1..-1]
+
+          singleton = nil
+          extensions = {}
+          variants = []
+
+          while c = components.shift
+            if c.size == 1
+              break if c == PRIVATEUSE
+              return nil if extensions.key?(c)
+              extensions[singleton = c] = []
+            elsif singleton
+              extensions[singleton] << c
+            else
+              variants << c
+            end
           end
-        end
 
-        [language, script, region, variants, extensions, components]
+          [language, script, region, variants, extensions, components]
+        else
+          [language, script, region, [], {}, []]
+        end
       end
 
       # ==== Parameters
       # tag<String>:: The Language-Tag snippet.
-      # regex<Regexgp>:: Use it only if you know what you're doing.
       #
       # ==== Returns
       # Array or nil::
@@ -168,19 +180,18 @@ module Rack #:nodoc:
       #   * region (as +String+, upcased) or +nil+
       #   * downcased variants (+Array+, could be empty).
       #
-      def extract_language_info(langtag, regex = LANGTAG_REGEX)
+      def extract_language_info(langtag)
         tag = langtag.downcase
-        return nil unless regex === tag
+        return nil unless LANGTAG_REGEX === tag
 
         language    = $1
         script      = $2
         region      = $3
-        components  = $4
+        variants    = $4
 
         script.capitalize! if script
         region.upcase! if region
-        components = components && components.split(Utils::HYPHEN_SPLITTER)[1..-1]
-        [language, script, region, components || []]
+        [language, script, region, variants.split(Utils::HYPHEN_SPLITTER)[1..-1] || []]
       end
 
     end
