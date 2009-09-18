@@ -155,30 +155,28 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # type<String>:: Type, the first portion of the MIME-Type's media range.
-      # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
-      # params<Hash>:: Parameter, as a +Hash+; the third portion of the the MIME-Type's media range.
-      # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
+      # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
+      # types<Array>:: The Array of *parsed* MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
       # Float:: The quality factor (relative strength of the MIME-Type).
       #
-      def qualify_mime_type(type, subtype, params, *types)
-        weigh_mime_type(type, subtype, params, *types).first
+      def qualify_mime_type(thing, types)
+        weigh_mime_type(thing, types).first
       end
 
       # ==== Parameters
-      # type<String>:: Type, the first portion of the MIME-Type's media range.
-      # subtype<String>:: Subtype, the second portion of the MIME-Type's media range.
-      # params<Hash>:: Parameter, as a +Hash+; the third portion of the the MIME-Type's media range.
-      # types<Array>:: The Array of MIME-Types to check against. MUST be *ordered* (by qvalue).
+      # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
+      # types<Array>:: The Array of *parsed* MIME-Types to check against. MUST be *ordered* (by qvalue).
       #
       # ==== Returns
       # Array[Float, Integer, Integer, Integer]::
       #   Quality factor, rate, specificity and negated index of the most relevant MIME-Type;
       #   i.e full relative weight of the MIME-Type.
       #
-      def weigh_mime_type(type, subtype, params, *types)
+      def weigh_mime_type(thing, types)
+
+        type, subtype, params = thing.is_a?(String) ? parse_media_range(thing) : thing
 
         rate = 0
         specificity = -1
@@ -213,9 +211,7 @@ module Rack #:nodoc:
           sp = 0
           divergence = false
 
-          p.each { |k,v|
-            params.key?(k) && params[k] == v ? sp += 1 : (divergence = true; break)
-          }
+          p.each { |k,v| params.key?(k) && params[k] == v ? sp += 1 : (divergence = true; break) }
 
           next if divergence || (r == rate && sp <= specificity)
           specificity = sp
@@ -228,7 +224,7 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # provides<Array>:: The Array of available MIME-Types (snippets). Could be empty.
+      # provides<Array>:: The Array of available MIME-Types (snippets or parsed media-ranges). Could be empty.
       # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
       #
       # ==== Returns
@@ -248,13 +244,8 @@ module Rack #:nodoc:
         return provides.first if accepts.empty?
 
         i = 0
-        accepts = accepts.sort_by { |t| [-t.at(3), i+=1] }
-
-        candidate = provides.map { |snippet|
-          type, subtype, params = parse_media_range(snippet)
-          weigh_mime_type(type, subtype, params, *accepts) << snippet
-        }.max_by { |t| t[0..3] } #instead of #sort
-
+        accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
+        candidate = provides.map { |t| weigh_mime_type(t,accepts) << t }.max_by { |t| t[0..3] } #instead of #sort
         candidate.at(0) == 0 ? nil : candidate.last
       end
 

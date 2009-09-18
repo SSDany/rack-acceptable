@@ -3,7 +3,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 describe Rack::Acceptable::MIMETypes, ".qualify_mime_type" do
 
   def qualify(type, subtype, params)
-    Rack::Acceptable::MIMETypes.qualify_mime_type(type, subtype, params, *@accepts)
+    Rack::Acceptable::MIMETypes.qualify_mime_type([type, subtype, params], @accepts)
   end
 
   it "qualifies MIME-Types correctly" do
