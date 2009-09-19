@@ -19,7 +19,7 @@
 "no-nyn"        : [ "nn"           , true  ]
 "sgn-be-fr"     : [ "sfb"          , true  ]
 "sgn-be-nl"     : [ "vgt"          , true  ]
-"sgn-CH-DE"     : [ "sgg"          , true  ]
+"sgn-ch-de"     : [ "sgg"          , true  ]
 "zh-guoyu"      : [ "cmn"          , true  ]
 "zh-hakka"      : [ "hak"          , true  ]
 "zh-min"        : [ "zh-min"       , true  ] #sic! it's deprecated, but does not have the replacement!
