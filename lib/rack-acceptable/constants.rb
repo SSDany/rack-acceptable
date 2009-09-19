@@ -9,6 +9,7 @@ module Rack #:nodoc:
 
       COMMA                     = ','.freeze
       EMPTY_STRING              = ''.freeze
+      HYPHEN                    = '-'.freeze
 
       ENV_HTTP_ACCEPT           = 'HTTP_ACCEPT'.freeze
       ENV_HTTP_ACCEPT_ENCODING  = 'HTTP_ACCEPT_ENCODING'.freeze

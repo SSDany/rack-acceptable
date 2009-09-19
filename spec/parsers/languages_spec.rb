@@ -2,29 +2,34 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 shared_examples_for "simple Language-Tag parser" do
 
-  it "extracts basic components (language, script, region and variants)" do
-    @parser[ 'de'               ].should == ['de', nil    , nil   , []                  ]
-    @parser[ 'fr'               ].should == ['fr', nil    , nil   , []                  ]
-    @parser[ 'de-DE'            ].should == ['de', nil    , 'DE'  , []                  ]
-    @parser[ 'en-US'            ].should == ['en', nil    , 'US'  , []                  ]
-    @parser[ 'zh-Hant'          ].should == ['zh', 'Hant' , nil   , []                  ]
-    @parser[ 'zh-Hans'          ].should == ['zh', 'Hans' , nil   , []                  ]
-    @parser[ 'zh-Hans-CN'       ].should == ['zh', 'Hans' , 'CN'  , []                  ]
-    @parser[ 'sr-Latn-CS'       ].should == ['sr', 'Latn' , 'CS'  , []                  ]
-    @parser[ 'sl-rozaj'         ].should == ['sl', nil    , nil   , ['rozaj' ]          ]
-    @parser[ 'sl-nedis'         ].should == ['sl', nil    , nil   , ['nedis' ]          ]
-    @parser[ 'sl-rozaj-nedis'   ].should == ['sl', nil    , nil   , ['rozaj','nedis']   ]
-    @parser[ 'de-CH-1901'       ].should == ['de', nil    , 'CH'  , ['1901']            ]
-    @parser[ 'sl-IT-nedis'      ].should == ['sl', nil    , 'IT'  , ['nedis']           ]
-    @parser[ 'sl-Latn-IT-nedis' ].should == ['sl', 'Latn' , 'IT'  , ['nedis']           ]
+  it "extracts basic components (primary subtag, extlang, script, region and variants)" do
+    @parser[ 'de'               ].should == ['de', nil    , nil     , nil   , []                  ]
+    @parser[ 'fr'               ].should == ['fr', nil    , nil     , nil   , []                  ]
+    @parser[ 'de-DE'            ].should == ['de', nil    , nil     , 'DE'  , []                  ]
+    @parser[ 'en-US'            ].should == ['en', nil    , nil     , 'US'  , []                  ]
+    @parser[ 'zh-Hant'          ].should == ['zh', nil    , 'Hant'  , nil   , []                  ]
+    @parser[ 'zh-Hans'          ].should == ['zh', nil    , 'Hans'  , nil   , []                  ]
+    @parser[ 'zh-Hans-CN'       ].should == ['zh', nil    , 'Hans'  , 'CN'  , []                  ]
+    @parser[ 'sr-Latn-CS'       ].should == ['sr', nil    , 'Latn'  , 'CS'  , []                  ]
+    @parser[ 'sl-rozaj'         ].should == ['sl', nil    , nil     , nil   , ['rozaj' ]          ]
+    @parser[ 'sl-nedis'         ].should == ['sl', nil    , nil     , nil   , ['nedis' ]          ]
+    @parser[ 'sl-rozaj-biske'   ].should == ['sl', nil    , nil     , nil   , ['rozaj','biske']   ]
+    @parser[ 'de-CH-1901'       ].should == ['de', nil    , nil     , 'CH'  , ['1901']            ]
+    @parser[ 'sl-IT-nedis'      ].should == ['sl', nil    , nil     , 'IT'  , ['nedis']           ]
+    @parser[ 'sl-Latn-IT-nedis' ].should == ['sl', nil    , 'Latn'  , 'IT'  , ['nedis']           ]
+    @parser[ 'zh-cmn-Hans-CN'   ].should == ['zh', 'cmn'  , 'Hans'  , 'CN'  , []                  ]
+    @parser[ 'zh-yue-HK'        ].should == ['zh', 'yue'  , nil     , 'HK'  , []                  ]
+    @parser[ 'zh-yue'           ].should == ['zh', 'yue'  , nil     , nil   , []                  ]
   end
 
   it "conveniently transforms basic components" do
-    @parser[ 'DE'               ].should == ['de', nil    , nil   , []        ]
-    @parser[ 'de-de'            ].should == ['de', nil    , 'DE'  , []        ]
-    @parser[ 'zh-hAnt'          ].should == ['zh', 'Hant' , nil   , []        ]
-    @parser[ 'sl-RoZaj'         ].should == ['sl', nil    , nil   , ['rozaj'] ]
-    @parser[ 'sl-Latn-it-NEDIS' ].should == ['sl', 'Latn' , 'IT'  , ['nedis'] ]
+    @parser[ 'DE'               ].should == ['de', nil    , nil     , nil   , []        ]
+    @parser[ 'de-de'            ].should == ['de', nil    , nil     , 'DE'  , []        ]
+    @parser[ 'zh-hAnt'          ].should == ['zh', nil    , 'Hant'  , nil   , []        ]
+    @parser[ 'sl-RoZaj'         ].should == ['sl', nil    , nil     , nil   , ['rozaj'] ]
+    @parser[ 'sl-Latn-it-NEDIS' ].should == ['sl', nil    , 'Latn'  , 'IT'  , ['nedis'] ]
+    @parser[ 'zh-Yue'           ].should == ['zh', 'yue'  , nil     , nil   , []        ]
+    @parser[ 'zh-YUE-HK'        ].should == ['zh', 'yue'  , nil     , 'HK'  , []        ]
   end
 
   it "returns nil when there's a 'privateuse' Language-Tag" do
@@ -47,8 +52,11 @@ shared_examples_for "simple Language-Tag parser" do
       'en-veryverylong',
       'en-a-x-value',
       'sl-rozaj-Latn',
+      'sl-Lath-IT-@@',
       'sl-rozaj-IT',
       'sl-IT-Latn',
+      'sl-IT-bo-peeeeeeeeeeeeep',
+      'zh-HK-yue',
       'x',
       'x-',
       'x-veryverylong',
@@ -77,34 +85,39 @@ describe Rack::Acceptable::Languages, '.extract_full_language_info' do
   before :all do
     @parser = lambda do |tag|
       ret = Rack::Acceptable::Languages.extract_full_language_info(tag)
-      ret.nil? ? nil : ret[0..3]
+      ret.nil? ? nil : ret[0..4]
     end
   end
 
   it_should_behave_like "simple Language-Tag parser"
 
   it "extracts extension components into a Hash" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-yyy-b-zzz-x-private')[4]
+    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-yyy-b-zzz-x-private')[5]
     extension.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
   end
 
   it "downcases extension components (both singletons and subtags)" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-Xxx-YYY-B-zzZ')[4]
+    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-Xxx-YYY-B-zzZ')[5]
     extension.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
   end
 
-  it "returns nil when there's a repeated singleton (this mean the Language-Tag is malformed)" do
+  it "returns nil when there are duplicate singletons (RFC 5646, sec. 2.2.9)" do
     Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-b-yyy-a-zzz-x-private').should === nil
     Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-b-yyy-A-zzz-x-private').should === nil
   end
 
+  it "returns nil when there are duplicate variants (RFC 5646, sec. 2.2.9)" do
+    Rack::Acceptable::Languages.extract_full_language_info('de-DE-1901-1901').should === nil
+    Rack::Acceptable::Languages.extract_full_language_info('sl-nedis-nedis').should === nil
+  end
+
   it "extracts privateuse components into an Array" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-en-private')[5]
+    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-en-private')[6]
     extension.should == ['en', 'private']
   end
 
   it "downcases privateuse components" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-EN-pRivate-SUBTAGS')[5]
+    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-EN-pRivate-SUBTAGS')[6]
     extension.should == ['en', 'private', 'subtags']
   end
 
