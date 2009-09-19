@@ -1,7 +1,4 @@
-require 'rubygems'
-require 'rbench'
-
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'helper'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 SNIPPETS = []
@@ -16,28 +13,39 @@ TIMES = ARGV[0] ? ARGV[0].to_i : 10_000
 
 RBench.run(TIMES) do
 
-  format :width => 110
+  column :times
+  column :one   , :title => 'MP'
+  column :two   , :title => 'RA'
+  column :diff  , :title => '#2/#1', :compare => [:two, :one]
 
-  column :mimeparse,  :title => 'MIMEParse'
-  column :acceptable, :title => 'Rack::Acceptable'
-  column :diff,       :title => '#2/#1', :compare => [:acceptable, :mimeparse]
-
-  group "Parse MIME-Type snippet (full; times: #{TIMES})" do
+  group "MIMEParse.parse_mime_type vs RA::MIMETypes.parse_mime_type" do
     SNIPPETS.each do |snippet|
-      report "snippet: #{snippet.inspect}" do
-        mimeparse   { MIMEParse::parse_mime_type snippet }
-        acceptable  { Rack::Acceptable::MIMETypes::parse_mime_type snippet }
+      report snippet.inspect do
+        one { MIMEParse::parse_mime_type snippet }
+        two { Rack::Acceptable::MIMETypes::parse_mime_type snippet }
       end
     end
+    summary ""
   end
 
-  group "Parse MIME-Type snippet (only necessary data; times: #{TIMES})" do
+  group "MIMEParse.parse_mime_type vs RA::MIMETypes.parse_media_range_and_qvalue" do
     SNIPPETS.each do |snippet|
-      report "snippet: #{snippet.inspect}" do
-        mimeparse   { MIMEParse::parse_mime_type snippet }
-        acceptable  { Rack::Acceptable::MIMETypes::parse_media_range_and_qvalue snippet }
+      report snippet.inspect do
+        one { MIMEParse::parse_mime_type snippet }
+        two { Rack::Acceptable::MIMETypes::parse_media_range_and_qvalue snippet }
       end
     end
+    summary ""
+  end
+
+  group "MIMEParse.parse_mime_type vs RA::MIMETypes.parse_media_range" do
+    SNIPPETS.each do |snippet|
+      report snippet.inspect do
+        one { MIMEParse::parse_mime_type snippet }
+        two { Rack::Acceptable::MIMETypes::parse_media_range snippet }
+      end
+    end
+    summary ""
   end
 
 end

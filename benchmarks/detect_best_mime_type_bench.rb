@@ -1,36 +1,51 @@
-require 'rubygems'
-require 'rbench'
-
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'lib', 'rack-acceptable'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'helper'))
 require File.expand_path(File.join(File.dirname(__FILE__), 'lib', 'mime_parse.rb'))
 
 HEADERS = []
-HEADERS << "app/xml"
-HEADERS << "app/xml;q=0.9, */*;q=0.1"
-HEADERS << "app/xml;q=0.9, text/xml;q=0.5, */*;q=0.1"
+HEADERS << "*/*"
+HEADERS << "text/*"
+HEADERS << "text/plain"
+HEADERS << "text/plain;q=0.5, */*"
+HEADERS << "text/plain;q=0.5, text/xml;q=0.9, */*"
+HEADERS << "text/plain;q=0.5, text/xml;a=42;q=0.9, */*"
+HEADERS << "text/plain;q=0.5, text/*;a=42;q=0.5, */*"
+HEADERS << "text/plain;q=0.5, text/*;a=42;q=0.5, text/*;q=0.9, */*"
 
-PROVIDES = %w(app/xml text/xml;a=1 text/xml)
+PROVIDES = %w(text/xml;a=42 text/plain text/html)
 
 TIMES = ARGV[0] ? ARGV[0].to_i : 10_000
 
 RBench.run(TIMES) do
 
-  format :width => 110
+  column :times
+  column :one   , :title => 'MP'
+  column :two   , :title => 'RA'
+  column :diff  , :title => '#2/#1', :compare => [:two, :one]
 
-  column :mimeparse,  :title => 'MIMEParse'
-  column :acceptable, :title => 'Rack::Acceptable'
-  column :diff,       :title => '#2/#1', :compare => [:acceptable, :mimeparse]
-
-  group "Detecting the best MIME-Type (vs MIMEParse; times: #{TIMES})" do
+  group "Weighing of the MIME-Types, each of #{PROVIDES.inspect}" do
     HEADERS.each do |header|
-      report "header: #{header.inspect}" do
-        mimeparse { MIMEParse::best_match(PROVIDES, header) }
-        acceptable do
+      accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
+      report header.inspect do
+        one { PROVIDES.each { |t| MIMEParse.fitness_and_quality_parsed(t,accepts) }}
+        two { PROVIDES.each { |t| Rack::Acceptable::MIMETypes.weigh_mime_type(t,accepts) }}
+      end
+    end
+
+    summary ''
+  end
+
+  group "Detecting the best MIME-Type, one of #{PROVIDES.inspect}" do
+    HEADERS.each do |header|
+      report header.inspect do
+        one { MIMEParse::best_match(PROVIDES, header) }
+        two do
           accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
           Rack::Acceptable::MIMETypes::detect_best_mime_type(PROVIDES, accepts) 
         end
       end
     end
+
+    summary ''
   end
 
 end
