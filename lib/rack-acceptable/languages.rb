@@ -77,9 +77,18 @@ module Rack #:nodoc:
         raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
       end
 
-      #:stopdoc
+      #--
+      # RFC 5646, sec. 2.2.2:
+      # Although the ABNF production 'extlang' permits up to three
+      # extended language tags in the language tag, extended language
+      # subtags MUST NOT include another extended language subtag in
+      # their 'Prefix'.  That is, the second and third extended language
+      # subtag positions in a language tag are permanently reserved and
+      # tags that include those subtags in that position are, and will
+      # always remain, invalid.
+      #++
 
-      language    = '([a-z]{2,3}(?:-[a-z]{3})?|[a-z]{5,8})'
+      language    = '([a-z]{2,8}|[a-z]{2,3}(?:-[a-z]{3})?)'
       script      = '(?:-([a-z]{4}))?'
       region      = '(?:-([a-z]{2}|\d{3}))?'
       variants    = '(?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*'
@@ -90,8 +99,8 @@ module Rack #:nodoc:
 
       LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(?=#{variants}#{extensions}#{privateuse}$)/o.freeze
       LANGTAG_REGEX           = /^#{language}#{script}#{region}(#{variants})(?=#{extensions}#{privateuse}$)/o.freeze
+      LANGTAG_EXT_REGEX       = /^#{extensions}#{privateuse}$/
       PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/i.freeze
-      GRANDFATHERED_REGEX     = /^i(?:-[a-z\d]{2,8}){1,2}$/.freeze
 
       def privateuse?(tag)
         PRIVATEUSE_REGEX === tag
@@ -112,8 +121,9 @@ module Rack #:nodoc:
       # ==== Returns
       # Array or nil::
       #   It returns +nil+, when the Language-Tag passed:
-      #   * does not conform the 'langtag' ABNF, i.e, malformed
-      #     grandfathered or starts with 'x' singleton ('privateuse').
+      #   * does not conform the Language-Tag ABNF (malformed)
+      #   * grandfathered
+      #   * starts with 'x' singleton ('privateuse').
       #   * contains duplicate variants
       #   * contains duplicate singletons
       #
@@ -129,6 +139,7 @@ module Rack #:nodoc:
       def extract_full_language_info(langtag)
 
         tag = langtag.downcase
+        return nil if GRANDFATHERED_TAGS.key?(tag)
         return nil unless LANGTAG_EXTENDED_REGEX === tag
 
         primary     = $1
@@ -167,9 +178,10 @@ module Rack #:nodoc:
       #
       # ==== Returns
       # Array or nil::
-      #   It returns +nil+, when the Language-Tag passed does not conform
-      #   the 'langtag' ABNF, i.e, malformed, grandfathered or starts with
-      #   'x' singleton ('privateuse').
+      #   It returns +nil+, when the Language-Tag passed:
+      #   * does not conform the Language-Tag ABNF (malformed)
+      #   * grandfathered
+      #   * starts with 'x' singleton ('privateuse').
       #
       #   Otherwise you'll get an +Array+ with:
       #   * primary subtag (as +String+, downcased),
@@ -187,6 +199,7 @@ module Rack #:nodoc:
       #
       def extract_language_info(langtag)
         tag = langtag.downcase
+        return nil if GRANDFATHERED_TAGS.key?(tag)
         return nil unless LANGTAG_REGEX === tag
 
         primary     = $1

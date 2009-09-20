@@ -38,8 +38,12 @@ shared_examples_for "simple Language-Tag parser" do
   end
 
   it "returns nil when there's a 'grandfathered' Language-Tag" do
-    @parser[ 'i-enochian' ].should == nil
-    @parser[ 'i-klingon'  ].should == nil
+    @parser[ 'i-enochian'   ].should == nil
+    @parser[ 'i-klingon'    ].should == nil
+    @parser[ 'zh-min-nan'   ].should == nil
+    @parser[ 'zh-xiang'     ].should == nil
+    @parser[ 'cel-gaulish'  ].should == nil
+    @parser[ 'art-lojban'   ].should == nil
   end
 
   it "returns nil when there's something malformed" do
@@ -57,6 +61,7 @@ shared_examples_for "simple Language-Tag parser" do
       'sl-IT-Latn',
       'sl-IT-bo-peeeeeeeeeeeeep',
       'zh-HK-yue',
+      'fooo-bar',
       'x',
       'x-',
       'x-veryverylong',
