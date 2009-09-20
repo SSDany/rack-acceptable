@@ -29,11 +29,12 @@ module Rack #:nodoc:
       #:stopdoc:
 
       def split_mime_type(thing)
-        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless thing =~ MEDIA_RANGE_REGEX
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless MEDIA_RANGE_REGEX === thing
 
         type    = $1
         subtype = $2
         snippet = $'
+
         raise ArgumentError, "Malformed MIME-Type: #{thing}" if
           type == Const::WILDCARD &&
           subtype != Const::WILDCARD
@@ -54,20 +55,11 @@ module Rack #:nodoc:
         return type, subtype, snippet
       end
 
-      def parse_media_range_parameter(snippet)
-        params = {}
-        for pair in snippet.split(Utils::SEMICOLON_SPLITTER)
-          k,v = pair.split(Utils::PAIR_SPLITTER,2)
-          k.downcase!
-          params[k] = v
-        end
-        params
-      end
-
       #:startdoc:
 
       # ==== Parameters
-      # thing<String>:: The MIME-Type snippet.
+      # thing<String>::
+      #   The MIME-Type snippet, *without* 'q' parameter, accept-extensions and so on.
       #
       # ==== Returns
       # Array[String, String, Hash]::
@@ -78,9 +70,12 @@ module Rack #:nodoc:
       # In other words, it checks only type/subtype pair.
       #
       def parse_media_range(thing)
-        thing =~ Utils::QUALITY_SPLITTER
-        type, subtype, snippet = split_mime_type($` || thing)
-        [type, subtype, parse_media_range_parameter(snippet)]
+        type, subtype, params = split_mime_type(thing)
+        if params.empty?
+          [type, subtype, {}]
+        else
+          [type, subtype, Utils.parse_parameter(params)]
+        end
       end
 
       # ==== Parameters
@@ -97,12 +92,14 @@ module Rack #:nodoc:
       #   type/subtype pair is not in a RFC 'Media-Range' pattern.
       #
       def parse_media_range_and_qvalue(thing)
-        thing =~ Utils::QUALITY_REGEX
-        range, qvalue = $` || thing, $1
-
-        raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ Utils::QVALUE_REGEX
-        type, subtype, snippet = split_mime_type(range)
-        [type, subtype, parse_media_range_parameter(snippet), (qvalue || Utils::QVALUE_DEFAULT).to_f]
+        if thing =~ Utils::QUALITY_REGEX
+          ret = parse_media_range($`)
+          qvalue = $1
+          raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" unless Utils::QVALUE_REGEX === qvalue
+          ret << qvalue.to_f
+        else
+          parse_media_range(thing) << Utils::QVALUE_DEFAULT
+        end
       end
 
       # ==== Parameters
@@ -122,7 +119,11 @@ module Rack #:nodoc:
 
         type, subtype, snippet = split_mime_type(thing)
 
-        qvalue, params, accept_extension, has_qvalue = Utils::QVALUE_DEFAULT, {}, {}, false
+        qvalue = Utils::QVALUE_DEFAULT
+        params = {}
+        accept_extension = {}
+        has_qvalue = false
+
         for pair in snippet.split(Utils::SEMICOLON_SPLITTER)
           k,v = pair.split(Utils::PAIR_SPLITTER,2)
 

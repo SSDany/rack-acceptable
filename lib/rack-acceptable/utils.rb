@@ -10,19 +10,29 @@ module Rack #:nodoc:
       # http://tools.ietf.org/html/rfc2616#section-3.9
       #++
 
-      QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
-      QUALITY_SPLITTER    = /\s*;\s*q\s*=/i.freeze
       QUALITY_PATTERN     = '\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?'.freeze
-
+      QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
       QVALUE_REGEX        = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
       QVALUE_DEFAULT      = 1.00
       QVALUE              = 'q'.freeze
 
-      PAIR_SPLITTER       = /\=/.freeze
-      COMMA_SPLITTER      = /,/.freeze
-      COMMA_WS_SPLITTER   = /,\s*/.freeze
+      # see benchmarks/simple/split_bench.rb
+      if RUBY_VERSION < '1.9.1'
+
+        PAIR_SPLITTER       = /\=/.freeze
+        HYPHEN_SPLITTER     = /-/
+        COMMA_SPLITTER      = /,/
+
+      else
+
+        PAIR_SPLITTER       = '='.freeze
+        HYPHEN_SPLITTER     = Const::HYPHEN
+        COMMA_SPLITTER      = Const::COMMA
+
+      end
+
       SEMICOLON_SPLITTER  = /\s*;\s*/.freeze
-      HYPHEN_SPLITTER     = /-/.freeze
+      COMMA_WS_SPLITTER   = /,\s*/.freeze
 
       TOKEN_PATTERN       = "[A-Za-z0-9#{Regexp.escape('!#$&%\'*+-.^_`|~')}]+".freeze
 
@@ -74,6 +84,33 @@ module Rack #:nodoc:
         ret.gsub!(/\s*(?:,\s*)+/, Const::COMMA)
         ret.gsub!(/^,|,$/, Const::EMPTY_STRING)
         ret
+      end
+
+      if RUBY_VERSION < '1.9.1'
+
+        def parse_parameter(snippet)
+          params = {}
+          for pair in snippet.split(SEMICOLON_SPLITTER)
+            k,v = pair.split(PAIR_SPLITTER,2)
+            k.downcase!
+            params[k] = v
+          end
+          params
+        end
+
+      else
+
+        def parse_parameter(snippet)
+          params = {}
+          for pair in snippet.split(Const::SEMICOLON)
+            pair.strip!
+            k,v = pair.split(PAIR_SPLITTER,2)
+            k.downcase!
+            params[k] = v
+          end
+          params
+        end
+
       end
 
       def blank?(s)

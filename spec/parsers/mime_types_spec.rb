@@ -54,20 +54,9 @@ describe Rack::Acceptable::MIMETypes, ".parse_media_range" do
 
   it_should_behave_like "media-range parser"
 
-  it "ignores accept-params (incl. 'q' parameter)" do
-    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;level=2;q=0.3;answer=42')
-    parsed[2].should == {'level' => '2'}
-
-    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;a=1;b=2;q=0.3')
-    parsed[2].should == {'a' => '1', 'b' => '2'}
-
-    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html;a=1;b=2;Q=0.3')
-    parsed[2].should == {'a' => '1', 'b' => '2'}
-  end
-
   it "ignores whitespaces between 'words' and semicolons" do
-    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html ; level=2 ; q=0.3 ; answer=42')
-    parsed.should == ['text', 'html', {'level' => '2'}]
+    parsed = Rack::Acceptable::MIMETypes.parse_media_range('text/html ; level=2 ; a=42')
+    parsed.should == ['text', 'html', {'level' => '2', 'a' => '42'}]
   end
 
 end
