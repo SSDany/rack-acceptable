@@ -22,18 +22,18 @@ module Rack #:nodoc:
         PAIR_SPLITTER       = /\=/.freeze
         HYPHEN_SPLITTER     = /-/
         COMMA_SPLITTER      = /,/
+        SEMICOLON_SPLITTER  = /;/.freeze
 
       else
 
         PAIR_SPLITTER       = '='.freeze
         HYPHEN_SPLITTER     = Const::HYPHEN
         COMMA_SPLITTER      = Const::COMMA
+        SEMICOLON_SPLITTER  = Const::SEMICOLON
 
       end
 
-      SEMICOLON_SPLITTER  = /\s*;\s*/.freeze
       COMMA_WS_SPLITTER   = /,\s*/.freeze
-
       TOKEN_PATTERN       = "[A-Za-z0-9#{Regexp.escape('!#$&%\'*+-.^_`|~')}]+".freeze
 
       module_function
@@ -84,33 +84,6 @@ module Rack #:nodoc:
         ret.gsub!(/\s*(?:,\s*)+/, Const::COMMA)
         ret.gsub!(/^,|,$/, Const::EMPTY_STRING)
         ret
-      end
-
-      if RUBY_VERSION < '1.9.1'
-
-        def parse_parameter(snippet)
-          params = {}
-          for pair in snippet.split(SEMICOLON_SPLITTER)
-            k,v = pair.split(PAIR_SPLITTER,2)
-            k.downcase!
-            params[k] = v
-          end
-          params
-        end
-
-      else
-
-        def parse_parameter(snippet)
-          params = {}
-          for pair in snippet.split(Const::SEMICOLON)
-            pair.strip!
-            k,v = pair.split(PAIR_SPLITTER,2)
-            k.downcase!
-            params[k] = v
-          end
-          params
-        end
-
       end
 
       def blank?(s)

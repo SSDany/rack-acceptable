@@ -21,41 +21,19 @@ module Rack #:nodoc:
       # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
       #
       def parse_accept(header)
-        header.strip.split(Utils::COMMA_WS_SPLITTER).map! { |entry| parse_media_range_and_qvalue(entry) }
+        header.strip.split(Utils::COMMA_WS_SPLITTER).map! { |entry| parse_mime_type(entry) }
       end
 
-      MEDIA_RANGE_REGEX = /^(#{Utils::TOKEN_PATTERN})\/(#{Utils::TOKEN_PATTERN})\s*(?:;|$)/io.freeze
+      MEDIA_RANGE_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})\/(#{Utils::TOKEN_PATTERN})\s*$/o.freeze
 
-      #:stopdoc:
-
-      def split_mime_type(thing)
-        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless MEDIA_RANGE_REGEX === thing
-
-        type    = $1
-        subtype = $2
-        snippet = $'
-
-        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
-          type == Const::WILDCARD &&
-          subtype != Const::WILDCARD
-
-        # RFC 2616, sec. 3.7:
-        # The type, subtype, and parameter attribute names are case-
-        # insensitive. Parameter values might or might not be case-sensitive,
-        # depending on the semantics of the parameter name. Linear white space
-        # (LWS) MUST NOT be used between the type and subtype, nor between an
-        # attribute and its value. The presence or absence of a parameter might
-        # be significant to the processing of a media-type, depending on its
-        # definition within the media type registry.
-
-        type.downcase!
-        subtype.downcase!
-        snippet.strip!
-
-        return type, subtype, snippet
-      end
-
-      #:startdoc:
+      # RFC 2616, sec. 3.7:
+      # The type, subtype, and parameter attribute names are case-
+      # insensitive. Parameter values might or might not be case-sensitive,
+      # depending on the semantics of the parameter name. Linear white space
+      # (LWS) MUST NOT be used between the type and subtype, nor between an
+      # attribute and its value. The presence or absence of a parameter might
+      # be significant to the processing of a media-type, depending on its
+      # definition within the media type registry.
 
       # ==== Parameters
       # thing<String>::
@@ -70,36 +48,27 @@ module Rack #:nodoc:
       # In other words, it checks only type/subtype pair.
       #
       def parse_media_range(thing)
-        type, subtype, params = split_mime_type(thing)
-        if params.empty?
-          [type, subtype, {}]
-        else
-          [type, subtype, Utils.parse_parameter(params)]
-        end
-      end
+        snippets = thing.split(Utils::SEMICOLON_SPLITTER)
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless MEDIA_RANGE_REGEX === snippets.shift
 
-      # ==== Parameters
-      # thing<String>:: The MIME-Type snippet (from the Accept request-header).
-      #
-      # ==== Returns
-      # Array[String, String, Hash, Float]::
-      #   Media-Range of the MIME-Type: type, subtype, parameter (as a +Hash+),
-      #   and quality factor (default value: 1.0)
-      #
-      # ==== Raises
-      # ArgumentError::
-      #   MIME-Type has malformed quality factor, or
-      #   type/subtype pair is not in a RFC 'Media-Range' pattern.
-      #
-      def parse_media_range_and_qvalue(thing)
-        if thing =~ Utils::QUALITY_REGEX
-          ret = parse_media_range($`)
-          qvalue = $1
-          raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" unless Utils::QVALUE_REGEX === qvalue
-          ret << qvalue.to_f
-        else
-          parse_media_range(thing) << Utils::QVALUE_DEFAULT
+        type = $1
+        subtype = $2
+        type.downcase!
+        subtype.downcase!
+
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
+          type == Const::WILDCARD &&
+          subtype != Const::WILDCARD
+
+        params = {}
+        snippets.each do |pair|
+          pair.strip!
+          k,v = pair.split(Utils::PAIR_SPLITTER,2)
+          k.downcase!
+          params[k] = v
         end
+
+        [type, subtype, params]
       end
 
       # ==== Parameters
@@ -117,14 +86,25 @@ module Rack #:nodoc:
       #
       def parse_mime_type(thing)
 
-        type, subtype, snippet = split_mime_type(thing)
+        snippets = thing.split(Utils::SEMICOLON_SPLITTER)
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" unless MEDIA_RANGE_REGEX === snippets.shift
+
+        type = $1
+        subtype = $2
+        type.downcase!
+        subtype.downcase!
+
+        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
+          type == Const::WILDCARD &&
+          subtype != Const::WILDCARD
 
         qvalue = Utils::QVALUE_DEFAULT
         params = {}
         accept_extension = {}
         has_qvalue = false
 
-        for pair in snippet.split(Utils::SEMICOLON_SPLITTER)
+        for pair in snippets
+          pair.strip!
           k,v = pair.split(Utils::PAIR_SPLITTER,2)
 
           # RFC 2616, sec. 14.1:

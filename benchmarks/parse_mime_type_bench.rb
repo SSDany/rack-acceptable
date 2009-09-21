@@ -32,16 +32,6 @@ RBench.run(TIMES) do
     summary ""
   end
 
-  group "MIMEParse.parse_mime_type vs RA::MIMETypes.parse_media_range_and_qvalue" do
-    SNIPPETS.each do |snippet|
-      report snippet.inspect do
-        one { MIMEParse::parse_mime_type snippet }
-        two { Rack::Acceptable::MIMETypes::parse_media_range_and_qvalue snippet }
-      end
-    end
-    summary ""
-  end
-
   group "MIMEParse.parse_mime_type vs RA::MIMETypes.parse_media_range" do
     SNIPPETS[0..2].each do |snippet|
       report snippet.inspect, TIMES*10 do
