@@ -95,12 +95,8 @@ module Rack #:nodoc:
       extensions  = '(?:-[a-wy-z\d]{1}(?:-[a-z\d]{2,8})+)*'
       privateuse  = '(?:-x(?:-[a-z\d]{1,8})+)?'
 
-      #:startdoc:
-
-      LANGTAG_EXTENDED_REGEX  = /^#{language}#{script}#{region}(?=#{variants}#{extensions}#{privateuse}$)/o.freeze
-      LANGTAG_REGEX           = /^#{language}#{script}#{region}(#{variants})(?=#{extensions}#{privateuse}$)/o.freeze
-      LANGTAG_EXT_REGEX       = /^#{extensions}#{privateuse}$/
-      PRIVATEUSE_REGEX        = /^x(?:-[a-z\d]{1,8})+$/i.freeze
+      LANGTAG_REGEX     = /^#{language}#{script}#{region}(#{variants})(?=#{extensions}#{privateuse}$)/o.freeze
+      PRIVATEUSE_REGEX  = /^x(?:-[a-z\d]{1,8})+$/i.freeze
 
       def privateuse?(tag)
         PRIVATEUSE_REGEX === tag
@@ -124,64 +120,6 @@ module Rack #:nodoc:
       #   * does not conform the Language-Tag ABNF (malformed)
       #   * grandfathered
       #   * starts with 'x' singleton ('privateuse').
-      #   * contains duplicate variants
-      #   * contains duplicate singletons
-      #
-      #   Otherwise you'll get an +Array+ with:
-      #   * primary subtag (as +String+, downcased),
-      #   * extlang (as +String+) or +nil+,
-      #   * script (as +String+, capitalized) or +nil+,
-      #   * region (as +String+, upcased) or +nil+
-      #   * downcased variants (+Array+, could be empty).
-      #   * extensions (+Hash+, could be empty).
-      #   * privateuse (+Array+, could be empty).
-      #
-      def extract_full_language_info(langtag)
-
-        tag = langtag.downcase
-        return nil if GRANDFATHERED_TAGS.key?(tag)
-        return nil unless LANGTAG_EXTENDED_REGEX === tag
-
-        primary     = $1
-        extlang     = nil
-        script      = $2
-        region      = $3
-        components  = $'.split(Utils::HYPHEN_SPLITTER)
-        components.shift
-
-        primary, extlang = primary.split(Utils::HYPHEN_SPLITTER) if primary.include?(Const::HYPHEN)
-        script.capitalize! if script
-        region.upcase! if region
-
-        singleton = nil
-        extensions = {}
-        variants = []
-
-        while c = components.shift
-          if c.size == 1
-            break if c == PRIVATEUSE
-            return nil if extensions.key?(c)
-            extensions[singleton = c] = []
-          elsif singleton
-            extensions[singleton] << c
-          else
-            return nil if variants.include?(c)
-            variants << c
-          end
-        end
-
-        [primary, extlang, script, region, variants, extensions, components]
-      end
-
-      # ==== Parameters
-      # tag<String>:: The Language-Tag snippet.
-      #
-      # ==== Returns
-      # Array or nil::
-      #   It returns +nil+, when the Language-Tag passed:
-      #   * does not conform the Language-Tag ABNF (malformed)
-      #   * grandfathered
-      #   * starts with 'x' singleton ('privateuse').
       #
       #   Otherwise you'll get an +Array+ with:
       #   * primary subtag (as +String+, downcased),
@@ -193,9 +131,6 @@ module Rack #:nodoc:
       # ==== Notes
       # In most cases, it's quite enough. Take a look, for example, at
       # {'35-character recomendation'}[http://tools.ietf.org/html/rfc5646#section-4.6].
-      # Anyway, there's #extract_full_language_info: it performs all
-      # validations which could be performed without IANA registry, and
-      # extracts all data which could be extracted from the 'langtag'.
       #
       def extract_language_info(langtag)
         tag = langtag.downcase

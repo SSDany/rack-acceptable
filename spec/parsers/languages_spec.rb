@@ -1,6 +1,10 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-shared_examples_for "simple Language-Tag parser" do
+describe Rack::Acceptable::Languages, '.extract_language_info' do
+
+  before :all do
+    @parser = lambda { |tag| Rack::Acceptable::Languages.extract_language_info(tag) }
+  end
 
   it "extracts basic components (primary subtag, extlang, script, region and variants)" do
     @parser[ 'de'               ].should == ['de', nil    , nil     , nil   , []                  ]
@@ -47,7 +51,6 @@ shared_examples_for "simple Language-Tag parser" do
   end
 
   it "returns nil when there's something malformed" do
-
     [ '1-GB',
       'a',
       'en--US',
@@ -69,61 +72,9 @@ shared_examples_for "simple Language-Tag parser" do
       'i',
       'i-bogus',
       'i-@@' 
-    ].each { |tag| @parser[tag].should == nil }
-
-  end
-
-end
-
-describe Rack::Acceptable::Languages, '.extract_language_info' do
-
-  before :all do
-    @parser = lambda { |tag| Rack::Acceptable::Languages.extract_language_info(tag) }
-  end
-
-  it_should_behave_like "simple Language-Tag parser"
-
-end
-
-describe Rack::Acceptable::Languages, '.extract_full_language_info' do
-
-  before :all do
-    @parser = lambda do |tag|
-      ret = Rack::Acceptable::Languages.extract_full_language_info(tag)
-      ret.nil? ? nil : ret[0..4]
+      ].each do |tag|
+      Rack::Acceptable::Languages.extract_language_info(tag).should == nil
     end
-  end
-
-  it_should_behave_like "simple Language-Tag parser"
-
-  it "extracts extension components into a Hash" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-yyy-b-zzz-x-private')[5]
-    extension.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
-  end
-
-  it "downcases extension components (both singletons and subtags)" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-Xxx-YYY-B-zzZ')[5]
-    extension.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
-  end
-
-  it "returns nil when there are duplicate singletons (RFC 5646, sec. 2.2.9)" do
-    Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-b-yyy-a-zzz-x-private').should === nil
-    Rack::Acceptable::Languages.extract_full_language_info('en-GB-a-xxx-b-yyy-A-zzz-x-private').should === nil
-  end
-
-  it "returns nil when there are duplicate variants (RFC 5646, sec. 2.2.9)" do
-    Rack::Acceptable::Languages.extract_full_language_info('de-DE-1901-1901').should === nil
-    Rack::Acceptable::Languages.extract_full_language_info('sl-nedis-nedis').should === nil
-  end
-
-  it "extracts privateuse components into an Array" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-en-private')[6]
-    extension.should == ['en', 'private']
-  end
-
-  it "downcases privateuse components" do
-    extension = Rack::Acceptable::Languages.extract_full_language_info('en-GB-x-EN-pRivate-SUBTAGS')[6]
-    extension.should == ['en', 'private', 'subtags']
   end
 
 end
