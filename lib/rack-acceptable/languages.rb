@@ -4,9 +4,6 @@ module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Languages
 
-      path = IO.read(::File.expand_path(::File.join(::File.dirname(__FILE__), 'data', 'grandfathered_language_tags.yml')))
-      GRANDFATHERED_TAGS = YAML.load(path)
-
       module_function
 
       #--
@@ -21,9 +18,6 @@ module Rack #:nodoc:
 
       HTTP_ACCEPT_LANGUAGE_REGEX              = /^\s*(\*|[a-z]{1,8}(?:-[a-z\d]{1,8})*)#{Utils::QUALITY_PATTERN}\s*$/io.freeze
       HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX = /^\s*(\*|[a-z]{1,8})(?:-[a-z\d]{1,8})*#{Utils::QUALITY_PATTERN}\s*$/o.freeze
-
-      PRIVATEUSE = 'x'.freeze
-      GRANDFATHERED = 'i'.freeze
 
       # ==== Parameters
       # header<String>:: The Accept-Language request-header.
@@ -71,84 +65,10 @@ module Rack #:nodoc:
       #
       def parse_locales(header)
         ret = Utils.parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
-        ret.reject! { |tag,_| tag == PRIVATEUSE || tag == GRANDFATHERED }
+        ret.reject! { |l,_| l == LanguageTag::PRIVATEUSE || l == LanguageTag::GRANDFATHERED }
         ret
       rescue
         raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
-      end
-
-      #--
-      # RFC 5646, sec. 2.2.2:
-      # Although the ABNF production 'extlang' permits up to three
-      # extended language tags in the language tag, extended language
-      # subtags MUST NOT include another extended language subtag in
-      # their 'Prefix'.  That is, the second and third extended language
-      # subtag positions in a language tag are permanently reserved and
-      # tags that include those subtags in that position are, and will
-      # always remain, invalid.
-      #++
-
-      language    = '([a-z]{2,8}|[a-z]{2,3}(?:-[a-z]{3})?)'
-      script      = '(?:-([a-z]{4}))?'
-      region      = '(?:-([a-z]{2}|\d{3}))?'
-      variants    = '(?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*'
-      extensions  = '(?:-[a-wy-z\d]{1}(?:-[a-z\d]{2,8})+)*'
-      privateuse  = '(?:-x(?:-[a-z\d]{1,8})+)?'
-
-      LANGTAG_REGEX     = /^#{language}#{script}#{region}(#{variants})(?=#{extensions}#{privateuse}$)/o.freeze
-      PRIVATEUSE_REGEX  = /^x(?:-[a-z\d]{1,8})+$/i.freeze
-
-      def privateuse?(tag)
-        PRIVATEUSE_REGEX === tag
-      end
-
-      def grandfathered?(tag)
-        GRANDFATHERED_TAGS.key?(tag) || GRANDFATHERED_TAGS.key?(tag.downcase)
-      end
-
-      def irregular_grandfathered?(tag)
-        return false unless tr = GRANDFATHERED_TAGS[tag] || GRANDFATHERED_TAGS[tag.downcase]
-        tr.at(1)
-      end
-
-      # ==== Parameters
-      # tag<String>:: The Language-Tag snippet.
-      #
-      # ==== Returns
-      # Array or nil::
-      #   It returns +nil+, when the Language-Tag passed:
-      #   * does not conform the Language-Tag ABNF (malformed)
-      #   * grandfathered
-      #   * starts with 'x' singleton ('privateuse').
-      #
-      #   Otherwise you'll get an +Array+ with:
-      #   * primary subtag (as +String+, downcased),
-      #   * extlang (as +String+, downcased) or +nil+,
-      #   * script (as +String+, capitalized) or +nil+,
-      #   * region (as +String+, upcased) or +nil+
-      #   * downcased variants (+Array+, could be empty).
-      #
-      # ==== Notes
-      # In most cases, it's quite enough. Take a look, for example, at
-      # {'35-character recomendation'}[http://tools.ietf.org/html/rfc5646#section-4.6].
-      #
-      def extract_language_info(langtag)
-        tag = langtag.downcase
-        return nil if GRANDFATHERED_TAGS.key?(tag)
-        return nil unless LANGTAG_REGEX === tag
-
-        primary     = $1
-        extlang     = nil
-        script      = $2
-        region      = $3
-        variants    = $4.split(Utils::HYPHEN_SPLITTER)
-        variants.shift
-
-        primary, extlang = primary.split(Utils::HYPHEN_SPLITTER) if primary.include?(Const::HYPHEN)
-        script.capitalize! if script
-        region.upcase! if region
-
-        [primary, extlang, script, region, variants]
       end
 
     end
