@@ -48,7 +48,7 @@ module Rack #:nodoc:
         end
 
         # ==== Parameters
-        # tag<String>:: The Language-Tag snippet.
+        # langtag<String>:: The Language-Tag snippet.
         #
         # ==== Returns
         # Array or nil::
@@ -87,6 +87,8 @@ module Rack #:nodoc:
         end
 
         def parse(thing)
+          return nil unless thing
+          return thing if thing.kind_of?(self)
           tag = self.allocate
           tag.recompose!(thing)
           tag
@@ -124,31 +126,14 @@ module Rack #:nodoc:
       end
 
       def to_s
-        composition = []
-        composition << @primary
-        composition << @extlang if @extlang
-        composition << @script if @script
-        composition << @region if @region
-        composition.concat @variants if @variants
-
-        if @extensions
-          @extensions.keys.sort.each do |s| 
-            composition << s
-            composition.concat @extensions[s]
-          end
-        end
-
-        if @privateuse
-          composition << PRIVATEUSE
-          composition.concat @privateuse
-        end
-
-        composition.join(Const::HYPHEN)
-      end
-
-      def composition
-        recompose!
-        @composition
+        cs = [@primary]
+        cs << @extlang if @extlang
+        cs << @script if @script
+        cs << @region if @region
+        cs.concat @variants if @variants
+        @extensions.keys.sort.each { |s| (cs << s).concat @extensions[s] } if @extensions
+        (cs << PRIVATEUSE).concat @privateuse if @privateuse
+        cs.join(Const::HYPHEN)
       end
 
       def candidates
@@ -186,15 +171,36 @@ module Rack #:nodoc:
         recompose!
       end
 
-      # Recomposes self.
+      # ==== Parameters
+      # thing<String, optional>::
+      #   The Language-Tag snippet
       #
-      def recompose!(thing = to_s)
-        return if @composition == thing
-        @composition = nil
+      # ==== Returns
+      # +nil+
+      #
+      # ==== Raises
+      # ArgumentError::
+      #   The Language-Tag passed:
+      #   * does not conform the Language-Tag ABNF (malformed)
+      #   * grandfathered
+      #   * starts with 'x' singleton ('privateuse').
+      #   * contains duplicate variants
+      #   * contains duplicate singletons
+      #
+      def recompose!(thing = nil)
 
-        tag = thing.downcase
+        tag = if thing
+          raise TypeError, "Can't convert #{thing.class} into String" unless thing.respond_to?(:to_str)
+          thing.to_str
+        else
+          to_s
+        end
+
+        return if @composition == tag || @_composition == (tag = tag.downcase)
+
         if GRANDFATHERED_TAGS.key?(tag)
           raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
+          # TODO: optional support for grandfathered tags.
         end
 
         if LANGTAG_COMPOSITION_REGEX === tag
@@ -224,7 +230,7 @@ module Rack #:nodoc:
               end
               @extensions[singleton = c] = []
             elsif singleton
-              @extensions[singleton] << c # TODO: should we parse extensions into Arrays?
+              @extensions[singleton] << c # why Arrays? Because of truncate (lookup) algorithm.
             else
               @variants ||= []
               if @variants.include?(c)
@@ -236,6 +242,7 @@ module Rack #:nodoc:
 
           @privateuse = components.empty? ? nil : components
           @composition = to_s
+          @_composition = @composition.downcase
 
         else
           raise ArgumentError, "Malformed or 'privateuse' Language-Tag: #{thing.inspect}"
@@ -245,6 +252,7 @@ module Rack #:nodoc:
       end
 
     end
+
   end
 end
 
