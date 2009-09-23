@@ -108,8 +108,6 @@ module Rack #:nodoc:
         @extensions.key?(key) || @extensions.key?(key.downcase)
       end
 
-      alias :extension? :has_singleton?
-
       def singletons
         return nil unless @extensions
         keys = @extensions.keys
@@ -147,6 +145,42 @@ module Rack #:nodoc:
         raise NotImplementedError
       end
 
+      #--
+      # RFC 4647, sec. 3.3.1 ('Basic Filtering')
+      #
+      # A language range matches a
+      # particular language tag if, in a case-insensitive comparison, it
+      # exactly equals the tag, or if it exactly equals a prefix of the tag
+      # such that the first character following the prefix is "-".  For
+      # example, the language-range "de-de" (German as used in Germany)
+      # matches the language tag "de-DE-1996" (German as used in Germany,
+      # orthography of 1996), but not the language tags "de-Deva" (German as
+      # written in the Devanagari script) or "de-Latn-DE" (German, Latin
+      # script, as used in Germany).
+      #++
+
+      # ==== Example
+      # tag = LanguageTag.parse('de-Latn-DE')
+      # tag.has_prefix?('de-Latn-DE') #=> true
+      # tag.has_prefix?('de-Latn') #=> true
+      # tag.has_prefix?('de-La') #=> false
+      # tag.has_prefix?('de-de') #=> false
+      # tag.has_prefix?('malformedlangtag') #=> false
+      #
+      def has_prefix?(other)
+        if other.kind_of?(self.class)
+          s = other.recompose.tag
+        elsif other.respond_to?(:to_str)
+          s = self.class.parse(other).tag
+        else
+          return false
+        end
+        recompose
+        @nicecased == s || @nicecased.index(s + Const::HYPHEN) == 0
+      rescue
+        false
+      end
+
       def ==(other)
         return false unless other.kind_of?(self.class)
         compose
@@ -177,17 +211,17 @@ module Rack #:nodoc:
       # a list of candidates to lookup, there'll be a proper exception.
       #
       def valid?
-        recompose
-      rescue
-        false
+        !!recompose rescue false
       end
+
+      alias :langtag? :valid?
 
       # ==== Parameters
       # thing<String, optional>::
       #   The Language-Tag snippet
       #
       # ==== Returns
-      # +true+
+      # +self+
       #
       # ==== Raises
       # ArgumentError::
@@ -209,7 +243,7 @@ module Rack #:nodoc:
         end
 
         # in most cases Language-Tags are already formatted.
-        return true if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
+        return self if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
 
         if GRANDFATHERED_TAGS.key?(tag)
           if self.class.canonize_grandfathered
@@ -260,17 +294,16 @@ module Rack #:nodoc:
 
           @privateuse   = components.empty? ? nil : components
           @nicecased    = compose
-          @composition  = @nicecased.downcase
+          @composition  = @tag.downcase
 
         else
           raise ArgumentError, "Malformed or 'privateuse' Language-Tag: #{thing.inspect}"
         end
 
-        true
+        self
       end
 
     end
-
   end
 end
 
