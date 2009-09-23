@@ -124,12 +124,12 @@ describe Rack::Acceptable::LanguageTag, ".extract_language_info" do
 
 end
 
-describe Rack::Acceptable::LanguageTag, "#recompose!" do
+describe Rack::Acceptable::LanguageTag, "#recompose" do
 
   before :all do
     @parser = lambda do |thing|
       tag = Rack::Acceptable::LanguageTag.allocate
-      tag.recompose!(thing)
+      tag.recompose(thing)
       if Rack::Acceptable::LanguageTag === tag
         [tag.primary, tag.extlang, tag.script, tag.region, tag.variants]
       else
@@ -144,7 +144,7 @@ describe Rack::Acceptable::LanguageTag, "#recompose!" do
 
   it "raises an ArgumentError when there's something malformed" do
     MALFORMED_LANGUAGE_TAGS.each do |tag|
-      lambda { @tag.recompose!(tag) }.
+      lambda { @tag.recompose(tag) }.
       should raise_error ArgumentError, %r{Malformed or 'privateuse' Language-Tag}
     end
   end
@@ -162,40 +162,40 @@ describe Rack::Acceptable::LanguageTag, "#recompose!" do
     it_should_behave_like "simple Language-Tag parser"
 
     it "raises an ArgumentError when there's a repeated singleton (RFC 5646, sec. 2.2.9)" do
-      lambda { @tag.recompose!('en-GB-a-xxx-b-yyy-a-zzz-x-private') }.
+      lambda { @tag.recompose('en-GB-a-xxx-b-yyy-a-zzz-x-private') }.
       should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated singleton: "a"\)}
 
-      lambda { @tag.recompose!('en-GB-a-xxx-b-yyy-A-zzz-x-private') }.
+      lambda { @tag.recompose('en-GB-a-xxx-b-yyy-A-zzz-x-private') }.
       should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated singleton: "a"\)}
     end
 
     it "raises an ArgumentError when there's a repeated variant (RFC 5646, sec. 2.2.9)" do
-      lambda { @tag.recompose!('sl-IT-nedis-nedis') }.
+      lambda { @tag.recompose('sl-IT-nedis-nedis') }.
       should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated variant: "nedis"\)}
 
-      lambda { @tag.recompose!('sl-IT-nedis-nEdIS') }.
+      lambda { @tag.recompose('sl-IT-nedis-nEdIS') }.
       should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated variant: "nedis"\)}
     end
 
     it "defaults extensions to nil" do
-      @tag.recompose!('en-GB')
+      @tag.recompose('en-GB')
       @tag.extensions.should == nil
     end
 
     it "defaults 'privateuse' to nil" do
-      @tag.recompose!('en-GB')
+      @tag.recompose('en-GB')
       @tag.privateuse.should == nil
     end
 
     describe "and there are some extensions" do
 
       it "extracts extensions into a Hash" do
-        @tag.recompose!('en-GB-a-xxx-yyy-b-zzz-x-private')
+        @tag.recompose('en-GB-a-xxx-yyy-b-zzz-x-private')
         @tag.extensions.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
       end
 
       it "downcases extensions (both singletons and subtags)" do
-        @tag.recompose!('en-GB-a-Xxx-YYY-B-zzZ')
+        @tag.recompose('en-GB-a-Xxx-YYY-B-zzZ')
         @tag.extensions.should == {'a' => ['xxx', 'yyy'], 'b' => ['zzz']}
       end
 
@@ -204,12 +204,12 @@ describe Rack::Acceptable::LanguageTag, "#recompose!" do
     describe "and there are some 'privateuse' subtags" do
 
       it "extracts 'privateuse' subtags into an Array" do
-        @tag.recompose!('en-GB-x-private-subtags')
+        @tag.recompose('en-GB-x-private-subtags')
         @tag.privateuse.should == ['private', 'subtags']
       end
 
       it "downcases 'privateuse' subtags" do
-        @tag.recompose!('en-GB-x-pRivate-SUBTAGS')
+        @tag.recompose('en-GB-x-pRivate-SUBTAGS')
         @tag.privateuse.should == ['private', 'subtags']
       end
 
@@ -333,7 +333,7 @@ describe Rack::Acceptable::LanguageTag, "#===" do
     (tag1 === tag2).should == true
   end
 
-  it "returns true, when there's an Object (#to_s) which represents the same tag" do
+  it "returns true, when there's an stringable thing (#to_str) which represents the same tag" do
     tag = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     (tag === 'sl-rozaj-biske').should == true
     (tag === 'SL-ROZAJ-biske').should == true

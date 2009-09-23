@@ -90,7 +90,7 @@ module Rack #:nodoc:
           return nil unless thing
           return thing if thing.kind_of?(self)
           tag = self.allocate
-          tag.recompose!(thing)
+          tag.recompose(thing)
           tag
         end
 
@@ -120,20 +120,25 @@ module Rack #:nodoc:
       end
 
       def initialize(*components)
-        raise ArgumentError, "Primary subtag could not be nil" if components.empty?
         @primary, @extlang, @script, @region, @variants, @extensions, @privateuse = *components
-        #recompose!(to_s)
       end
 
-      def to_s
-        cs = [@primary]
-        cs << @extlang if @extlang
-        cs << @script if @script
-        cs << @region if @region
-        cs.concat @variants if @variants
-        @extensions.keys.sort.each { |s| (cs << s).concat @extensions[s] } if @extensions
-        (cs << PRIVATEUSE).concat @privateuse if @privateuse
-        cs.join(Const::HYPHEN)
+      def compose
+        @tag = [@primary]
+        @tag << @extlang if @extlang
+        @tag << @script if @script
+        @tag << @region if @region
+        @tag.concat @variants if @variants
+        singletons.each { |s| (@tag << s).concat @extensions[s] } if @extensions
+        (@tag << PRIVATEUSE).concat @privateuse if @privateuse
+        @tag = @tag.join(Const::HYPHEN)
+      end
+
+      attr_reader :tag # the most recent 'build' of tag
+
+      def nicecased
+        recompose   # we could not conveniently format malformed or invalid tags
+        @nicecased  #.dup #uuuuugh
       end
 
       def candidates
@@ -142,19 +147,21 @@ module Rack #:nodoc:
 
       def ==(other)
         return false unless other.kind_of?(self.class)
-        ss = self.to_s
-        os = other.to_s
-        ss == os || ss.downcase == os.downcase
+        compose
+        other.compose
+        @tag == other.tag || @tag.downcase == other.tag.downcase
       end
 
       def ===(other)
-        if other.respond_to?(:to_s)
-          ss = self.to_s
-          os = other.to_s
-          ss == os || ss.downcase == os.downcase
+        if other.kind_of?(self.class)
+          os = other.compose
+        elsif other.respond_to?(:to_str)
+          os = other.to_str
         else
-          false
+          return false
         end
+        compose
+        @tag == os || @tag.downcase == os.downcase
       end
 
       # Validates self.
@@ -167,8 +174,8 @@ module Rack #:nodoc:
       # try to get the composition of the invalid tag, or, for example,
       # a list of candidates to lookup, there'll be a proper exception.
       #
-      def validate!
-        recompose!
+      def valid?
+        !!recompose rescue false
       end
 
       # ==== Parameters
@@ -187,16 +194,17 @@ module Rack #:nodoc:
       #   * contains duplicate variants
       #   * contains duplicate singletons
       #
-      def recompose!(thing = nil)
+      def recompose(thing = nil)
 
         tag = if thing
           raise TypeError, "Can't convert #{thing.class} into String" unless thing.respond_to?(:to_str)
           thing.to_str
         else
-          to_s
+          compose
         end
 
-        return if @composition == tag || @_composition == (tag = tag.downcase)
+        # in most cases Language-Tags are already formatted.
+        return if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
 
         if GRANDFATHERED_TAGS.key?(tag)
           raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
@@ -228,6 +236,7 @@ module Rack #:nodoc:
               if @extensions.key?(c)
                 raise ArgumentError, "Invalid Language-Tag (repeated singleton: #{c.inspect}): #{thing.inspect}"
               end
+              singleton = c
               @extensions[singleton = c] = []
             elsif singleton
               @extensions[singleton] << c # why Arrays? Because of truncate (lookup) algorithm.
@@ -240,9 +249,9 @@ module Rack #:nodoc:
             end
           end
 
-          @privateuse = components.empty? ? nil : components
-          @composition = to_s
-          @_composition = @composition.downcase
+          @privateuse   = components.empty? ? nil : components
+          @nicecased    = compose
+          @composition  = @nicecased.downcase
 
         else
           raise ArgumentError, "Malformed or 'privateuse' Language-Tag: #{thing.inspect}"
