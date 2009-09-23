@@ -160,12 +160,32 @@ module Rack #:nodoc:
       #++
 
       # ==== Example
-      # tag = LanguageTag.parse('de-Latn-DE')
-      # tag.has_prefix?('de-Latn-DE') #=> true
-      # tag.has_prefix?('de-Latn') #=> true
-      # tag.has_prefix?('de-La') #=> false
-      # tag.has_prefix?('de-de') #=> false
-      # tag.has_prefix?('malformedlangtag') #=> false
+      #   tag = LanguageTag.parse('de-de')
+      #   tag.matches?('de-DE-1996') #=> true
+      #   tag.matches?('de-Latn-DE') #=> false
+      #   tag.matches?('*') #=> true (by default)
+      #
+      def matches?(other)
+        if other.kind_of?(self.class)
+          other.has_prefix?(self)
+        elsif other.respond_to?(:to_str)
+          s = other.to_str
+          return true if s == Const::WILDCARD
+          self.class.parse(s).has_prefix?(self)
+        else
+          false
+        end
+      rescue
+        false
+      end
+
+      # ==== Example
+      #   tag = LanguageTag.parse('de-Latn-DE')
+      #   tag.has_prefix?('de-Latn-DE') #=> true
+      #   tag.has_prefix?('de-Latn') #=> true
+      #   tag.has_prefix?('de-La') #=> false
+      #   tag.has_prefix?('de-de') #=> false
+      #   tag.has_prefix?('malformedlangtag') #=> false
       #
       def has_prefix?(other)
         if other.kind_of?(self.class)
@@ -206,9 +226,8 @@ module Rack #:nodoc:
       # Validation is deferred by default, because the paranoid
       # check & dup of everything is not a good way (in this case).
       # So, you may create some tags, make them malformed/invalid,
-      # and still be able to compare and modify them. But when you'll
-      # try to get the composition of the invalid tag, or, for example,
-      # a list of candidates to lookup, there'll be a proper exception.
+      # and still be able to compare and modify them. Only note, that
+      # 'filtering' and 'lookup' is not validation-free.
       #
       def valid?
         !!recompose rescue false
