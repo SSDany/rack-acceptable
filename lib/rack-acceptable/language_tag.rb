@@ -167,14 +167,16 @@ module Rack #:nodoc:
       #
       def matches?(other)
         if other.kind_of?(self.class)
-          other.has_prefix?(self)
+          s = other.recompose.tag
         elsif other.respond_to?(:to_str)
           s = other.to_str
           return true if s == Const::WILDCARD
-          self.class.parse(s).has_prefix?(self)
+          s = self.class.parse(s).tag
         else
-          false
+          return false
         end
+        recompose
+        @tag == s || s.index(@tag + Const::HYPHEN) == 0
       rescue
         false
       end
@@ -196,7 +198,7 @@ module Rack #:nodoc:
           return false
         end
         recompose
-        @nicecased == s || @nicecased.index(s + Const::HYPHEN) == 0
+        @tag == s || @tag.index(s + Const::HYPHEN) == 0
       rescue
         false
       end
