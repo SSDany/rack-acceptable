@@ -39,6 +39,8 @@ module Rack #:nodoc:
 
       class << self
 
+        attr_accessor :canonize_grandfathered
+
         def privateuse?(tag)
           PRIVATEUSE_REGEX === tag
         end
@@ -154,14 +156,14 @@ module Rack #:nodoc:
 
       def ===(other)
         if other.kind_of?(self.class)
-          os = other.compose
+          s = other.compose
         elsif other.respond_to?(:to_str)
-          os = other.to_str
+          s = other.to_str
         else
           return false
         end
         compose
-        @tag == os || @tag.downcase == os.downcase
+        @tag == s || @tag.downcase == s.downcase
       end
 
       # Validates self.
@@ -175,7 +177,9 @@ module Rack #:nodoc:
       # a list of candidates to lookup, there'll be a proper exception.
       #
       def valid?
-        !!recompose rescue false
+        recompose
+      rescue
+        false
       end
 
       # ==== Parameters
@@ -183,13 +187,14 @@ module Rack #:nodoc:
       #   The Language-Tag snippet
       #
       # ==== Returns
-      # +nil+
+      # +true+
       #
       # ==== Raises
       # ArgumentError::
       #   The Language-Tag passed:
       #   * does not conform the Language-Tag ABNF (malformed)
-      #   * grandfathered
+      #   * grandfathered (when 'canonize_grandfathered' is off), or
+      #   * grandfathered without canonical form (when 'canonize_grandfathered' is on)
       #   * starts with 'x' singleton ('privateuse').
       #   * contains duplicate variants
       #   * contains duplicate singletons
@@ -204,11 +209,15 @@ module Rack #:nodoc:
         end
 
         # in most cases Language-Tags are already formatted.
-        return if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
+        return true if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
 
         if GRANDFATHERED_TAGS.key?(tag)
-          raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
-          # TODO: optional support for grandfathered tags.
+          if self.class.canonize_grandfathered
+            tag = GRANDFATHERED_TAGS[tag].first
+            raise ArgumentError, "There's no canonical form for grandfathered Language-Tag: #{thing.inspect}" unless tag
+          else
+            raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
+          end
         end
 
         if LANGTAG_COMPOSITION_REGEX === tag
@@ -257,7 +266,7 @@ module Rack #:nodoc:
           raise ArgumentError, "Malformed or 'privateuse' Language-Tag: #{thing.inspect}"
         end
 
-        nil
+        true
       end
 
     end

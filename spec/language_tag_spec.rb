@@ -150,7 +150,46 @@ describe Rack::Acceptable::LanguageTag, "#recompose" do
   end
 
   describe "when the argument passed represents a 'grandfathered' Language-Tag" do
-    it("") { pending "should we handle this as provided by the mapping for deprecated tags?" }
+
+    before :each do
+      Rack::Acceptable::LanguageTag.canonize_grandfathered = false
+    end
+
+    it "raises an ArgumentError, when 'canonize_grandfathered' option is off" do
+      lambda { @tag.recompose('zh-hakka') }.should raise_error ArgumentError, %r{Grandfathered Language-Tag}
+      lambda { @tag.recompose('i-enochian') }.should raise_error ArgumentError, %r{Grandfathered Language-Tag}
+    end
+
+    describe "and 'canonize_grandfathered' option is on" do
+
+      before :each do
+        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
+      end
+
+      it "handles tag, if there's a canonical form" do
+        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
+        @tag.recompose('zh-hakka')
+        @tag.primary.should == 'hak'
+        @tag.extlang.should == nil
+        @tag.script.should == nil
+        @tag.region.should == nil
+        @tag.variants.should == nil
+        @tag.extensions.should == nil
+        @tag.privateuse.should == nil
+      end
+
+      it "raises an ArgumentError otherwise" do
+        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
+        lambda { @tag.recompose('i-enochian') }.should raise_error ArgumentError,
+        %r{There's no canonical form for grandfathered Language-Tag}
+      end
+
+    end
+
+    after :each do
+      Rack::Acceptable::LanguageTag.canonize_grandfathered = false
+    end
+
   end
 
   describe "when the argument passed represents a 'privateuse' Language-Tag" do
@@ -354,6 +393,28 @@ describe Rack::Acceptable::LanguageTag, "#===" do
 
     tag1.variants = ['boooooogus!']
     (tag1 === tag2).should == false
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, "#valid?" do
+
+  it "returns true, when LanguageTag is wellformed and valid" do
+    Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile-private1').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-Latn-CN').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-Latn').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh').should be_valid
+    Rack::Acceptable::LanguageTag.parse('zh-CN').should be_valid
+  end
+
+  it "returns false otherwise" do
+    Rack::Acceptable::LanguageTag.new('zh', 'whateveryouwant').should_not be_valid
+    Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, 'tooooloooooong').should_not be_valid
+    Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, nil, {'a' => 'xxx', 'A' => 'zzz'}).should_not be_valid
+    Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, ['variant1', 'variant1']).should_not be_valid
   end
 
 end
