@@ -119,7 +119,22 @@ describe Rack::Acceptable::LanguageTag, ".extract_language_info" do
   end
 
   it "returns nil when there's something malformed" do
-    MALFORMED_LANGUAGE_TAGS.each { |tag| @parser[tag].should == nil }
+    ::MALFORMED_LANGUAGE_TAGS.each { |tag| @parser[tag].should == nil }
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, ".parse" do
+
+  it "returns the argument passed, if it is already a LanguageTag" do
+    tag = Rack::Acceptable::LanguageTag.parse('de-DE')
+    Rack::Acceptable::LanguageTag.parse(tag).should == tag
+  end
+
+  it "attempts to create the new LanguageTag using the #recompose method otherwise" do
+    Rack::Acceptable::LanguageTag.should_receive(:new).and_return(tag = mock)
+    tag.should_receive(:recompose).and_return(:tag)
+    Rack::Acceptable::LanguageTag.parse('whatever').should == :tag
   end
 
 end
@@ -143,7 +158,7 @@ describe Rack::Acceptable::LanguageTag, "#recompose" do
   end
 
   it "raises an ArgumentError when there's something malformed" do
-    MALFORMED_LANGUAGE_TAGS.each do |tag|
+    ::MALFORMED_LANGUAGE_TAGS.each do |tag|
       lambda { @tag.recompose(tag) }.
       should raise_error ArgumentError, %r{Malformed or 'privateuse' Language-Tag}
     end
@@ -162,11 +177,7 @@ describe Rack::Acceptable::LanguageTag, "#recompose" do
 
     describe "and 'canonize_grandfathered' option is on" do
 
-      before :each do
-        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
-      end
-
-      it "handles tag, if there's a canonical form" do
+      it "creates the LanguageTag, if there's a canonical form" do
         Rack::Acceptable::LanguageTag.canonize_grandfathered = true
         @tag.recompose('zh-hakka')
         @tag.primary.should == 'hak'
@@ -256,6 +267,11 @@ describe Rack::Acceptable::LanguageTag, "#recompose" do
 
   end
 
+  it "raises a TypeError, when the argument passed is not stringable (#to_str)" do
+    tag = Rack::Acceptable::LanguageTag.new
+    lambda { tag.recompose(42) }.should raise_error TypeError, %r{Can't convert Fixnum into String}
+  end
+
 end
 
 describe Rack::Acceptable::LanguageTag, "#singletons" do
@@ -327,7 +343,7 @@ describe Rack::Acceptable::LanguageTag, "#==" do
     (tag2 == tag3).should == true
   end
 
-  it "even if tags are malformed or invalid" do
+  it "even if tags are invalid" do
     tag1 = Rack::Acceptable::LanguageTag.parse('en')
     tag2 = Rack::Acceptable::LanguageTag.parse('en')
     tag1.variants = ['boooooogus!']
@@ -364,7 +380,7 @@ describe Rack::Acceptable::LanguageTag, "#===" do
     (tag2 === tag3).should == true
   end
 
-  it "even if tags are malformed or invalid" do
+  it "even if tags are invalid" do
     tag1 = Rack::Acceptable::LanguageTag.parse('en')
     tag2 = Rack::Acceptable::LanguageTag.parse('en')
     tag1.variants = ['boooooogus!']
@@ -372,13 +388,13 @@ describe Rack::Acceptable::LanguageTag, "#===" do
     (tag1 === tag2).should == true
   end
 
-  it "returns true, when there's an stringable thing (#to_str) which represents the same tag" do
+  it "returns true, when there's a stringable thing (#to_str) which represents the same tag" do
     tag = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     (tag === 'sl-rozaj-biske').should == true
     (tag === 'SL-ROZAJ-biske').should == true
   end
 
-  it "even if the tag is malformed or invalid" do
+  it "even if the tag is invalid" do
     tag = Rack::Acceptable::LanguageTag.parse('en')
     tag.variants = ['boooooogus!']
     (tag === 'en-boooooogus!').should == true
@@ -399,7 +415,7 @@ end
 
 describe Rack::Acceptable::LanguageTag, "#valid?" do
 
-  it "returns true, when LanguageTag is wellformed and valid" do
+  it "returns true, when the LanguageTag is valid" do
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile-private1').should be_valid
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile').should be_valid
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1').should be_valid
@@ -415,6 +431,95 @@ describe Rack::Acceptable::LanguageTag, "#valid?" do
     Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, 'tooooloooooong').should_not be_valid
     Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, nil, {'a' => 'xxx', 'A' => 'zzz'}).should_not be_valid
     Rack::Acceptable::LanguageTag.new('zh', nil, 'Latn', nil, ['variant1', 'variant1']).should_not be_valid
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, "#matches?" do
+
+  describe "when self is a valid Language-Tag" do
+
+    it "returns true, when the thing passed represents the valid Language-Tag and self matches it" do
+      tag = Rack::Acceptable::LanguageTag.parse('de-de')
+      tag.matches?('de-DE-1996').should == true
+      tag.matches?('de-DE-a-xxx-b-yyy-x-private').should == true
+
+      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-DE-1996')).should == true
+      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-DE-a-xxx-b-yyy-x-private')).should == true
+    end
+
+    it "returns true, when the thing passed is a wildcard" do
+      tag = Rack::Acceptable::LanguageTag.parse('de-de')
+      tag.matches?('*').should == true
+    end
+
+    it "returns false otherwise" do
+      tag = Rack::Acceptable::LanguageTag.parse('de-de')
+      tag.matches?('de-Latn-DE').should == false
+      tag.matches?('de-Deva').should == false
+      tag.matches?('bogus!').should == false
+      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Deva')).should == false
+      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Latn-DE')).should == false
+      tag.matches?(Rack::Acceptable::LanguageTag.new('bogus!')).should == false
+    end
+
+  end
+
+  it "returns false, when self is not valid" do
+    tag = Rack::Acceptable::LanguageTag.new('bogus!')
+    tag.matches?('bogus!').should == false
+    tag.matches?('*').should == false
+    tag.matches?(Rack::Acceptable::LanguageTag.new('bogus!')).should == false
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, "#has_prefix?" do
+
+  describe "when self is a valid Language-Tag" do
+
+    it "returns true, when the thing passed is a valid prefix for self" do
+      tag = Rack::Acceptable::LanguageTag.parse('de-DE-1996-a-xxx-b-yyy-x-private')
+      tag.has_prefix?('de-DE-1996-a-xxx').should == true
+      tag.has_prefix?('de-DE-1996').should == true
+      tag.has_prefix?('de-DE').should == true
+
+      tag.has_prefix?(Rack::Acceptable::LanguageTag.parse('de-DE-1996-a-xxx')).should == true
+      tag.has_prefix?(Rack::Acceptable::LanguageTag.parse('de-DE-1996')).should == true
+      tag.has_prefix?(Rack::Acceptable::LanguageTag.parse('de-DE')).should == true
+    end
+
+    it "returns false otherwise" do
+      tag = Rack::Acceptable::LanguageTag.parse('de-DE-1996-a-xxx-b-yyy-x-private')
+      tag.has_prefix?('de-Latn-DE').should == false
+      tag.has_prefix?('bogus!').should == false
+    end
+
+  end
+
+  it "returns false, when self is not valid" do
+    tag = Rack::Acceptable::LanguageTag.new('de', 'bogus!')
+    tag.has_prefix?('de').should == false
+    tag.has_prefix?(Rack::Acceptable::LanguageTag.new('de')).should == false
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, "#nicecased" do
+
+  it "recomposes the LanguageTag first" do
+    tag = Rack::Acceptable::LanguageTag.parse('ZH-YUE-hk')
+    tag.should_receive(:recompose)
+    tag.nicecased
+  end
+
+  it "returns the 'nicecased' form of the LanguageTag, if recomposition was successful" do
+    tag = Rack::Acceptable::LanguageTag.parse('ZH-YUE-hk')
+    tag.nicecased.should == 'zh-yue-HK'
+    tag = Rack::Acceptable::LanguageTag.parse('sl-latN-it-NEDIS')
+    tag.nicecased.should == 'sl-Latn-IT-nedis'
+    tag = Rack::Acceptable::LanguageTag.parse('sl-latN-it-NEDIS-B-YYY-A-XXX-ZZZ-X-A-b')
+    tag.nicecased.should == 'sl-Latn-IT-nedis-a-xxx-zzz-b-yyy-x-a-b'
   end
 
 end
