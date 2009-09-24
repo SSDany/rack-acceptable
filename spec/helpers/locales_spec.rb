@@ -1,14 +1,14 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-class RequestWithLocaleSupport < Rack::Request
-  include Rack::Acceptable::Helpers::Locales
-end
-
 describe Rack::Acceptable::Helpers::Locales do
+
+  before :all do
+    @_request = Class.new(Rack::Request) { include Rack::Acceptable::Helpers::Locales }
+  end
 
   def fake_request(opts = {})
     env = Rack::MockRequest.env_for('/', opts)
-    RequestWithLocaleSupport.new(env)
+    @_request.new(env)
   end
 
   it "knows about preferred locales" do
