@@ -91,9 +91,7 @@ module Rack #:nodoc:
         def parse(thing)
           return nil unless thing
           return thing if thing.kind_of?(self)
-          tag = self.allocate
-          tag.recompose(thing)
-          tag
+          self.new.recompose(thing)
         end
 
       end
@@ -113,10 +111,6 @@ module Rack #:nodoc:
         keys = @extensions.keys
         keys.sort!
         keys
-      end
-
-      def extended?
-        raise NotImplementedError
       end
 
       def initialize(*components)
@@ -167,15 +161,16 @@ module Rack #:nodoc:
       #
       def matches?(other)
         if other.kind_of?(self.class)
+          recompose
           s = other.recompose.tag
         elsif other.respond_to?(:to_str)
+          recompose
           s = other.to_str
           return true if s == Const::WILDCARD
           s = self.class.parse(s).tag
         else
           return false
         end
-        recompose
         @tag == s || s.index(@tag + Const::HYPHEN) == 0
       rescue
         false
