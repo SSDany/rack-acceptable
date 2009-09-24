@@ -13,6 +13,7 @@ module Rack #:nodoc:
       QUALITY_PATTERN     = '\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?'.freeze
       QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
       QVALUE_REGEX        = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
+
       QVALUE_DEFAULT      = 1.00
       QVALUE              = 'q'.freeze
 
@@ -61,10 +62,15 @@ module Rack #:nodoc:
       #
       def extract_qvalues(header)
         header.split(COMMA_WS_SPLITTER).map! { |entry|
-          entry =~ QUALITY_REGEX
-          thing, qvalue = $` || entry, $1
-          raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}" if qvalue && qvalue !~ QVALUE_REGEX
-          [thing, qvalue ? qvalue.to_f : QVALUE_DEFAULT]
+          QUALITY_REGEX === entry
+          thing = $` || entry
+          if !(qvalue = $1)
+            [thing, QVALUE_DEFAULT]
+          elsif QVALUE_REGEX === qvalue
+            [thing, qvalue.to_f]
+          else
+            raise ArgumentError, "Malformed quality factor: #{qvalue.inspect}"
+          end
         }
       end
 
