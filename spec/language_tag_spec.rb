@@ -458,6 +458,7 @@ describe Rack::Acceptable::LanguageTag, "#matches?" do
       tag.matches?('de-Latn-DE').should == false
       tag.matches?('de-Deva').should == false
       tag.matches?('bogus!').should == false
+      tag.matches?(42).should == false
       tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Deva')).should == false
       tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Latn-DE')).should == false
       tag.matches?(Rack::Acceptable::LanguageTag.new('bogus!')).should == false
@@ -493,6 +494,7 @@ describe Rack::Acceptable::LanguageTag, "#has_prefix?" do
       tag = Rack::Acceptable::LanguageTag.parse('de-DE-1996-a-xxx-b-yyy-x-private')
       tag.has_prefix?('de-Latn-DE').should == false
       tag.has_prefix?('bogus!').should == false
+      tag.has_prefix?(42).should == false
     end
 
   end
