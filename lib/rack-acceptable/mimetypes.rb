@@ -229,19 +229,6 @@ module Rack #:nodoc:
         candidate.at(0) == 0 ? nil : candidate.last
       end
 
-      def detect_acceptable_mime_type(provides, header)
-        return nil if provides.empty?
-
-        i = 0
-        accepts = Utils.extract_qvalues(header).select{ |_,q| q != 0 }.sort_by { |_,q| [-q,i+=1] }
-        accepts.map! { |t,_| t  }
-
-        candidates = accepts & provides
-        return candidates.first unless candidates.empty?
-        return provides.first if accepts.include?(Const::MEDIA_RANGE_WILDCARD)
-        nil
-      end
-
     end
   end
 end
