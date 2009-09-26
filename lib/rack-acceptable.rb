@@ -21,6 +21,7 @@ module Rack #:nodoc:
 
     autoload :LanguageTag     , 'rack-acceptable/language_tag'
 
+    autoload :Formats         , 'rack-acceptable/middleware/formats'
     autoload :Helpers         , 'rack-acceptable/helpers'
 
   end

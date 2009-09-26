@@ -58,7 +58,7 @@ describe Rack::Acceptable::MIMETypes, ".qualify_mime_type" do
 
   end
 
-  it "satisfies RFC2616#14 conditions" do
+  it "in compliance with RFC2616#14 standards" do
 
     @accepts =  ['text' , 'html'  , {'level' => '1'}, 1.0, {}],
                 ['text' , 'html'  , {}, 0.7, {}],
