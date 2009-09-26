@@ -3,19 +3,14 @@ module Rack #:nodoc:
     module Helpers::Locales
 
       def preferred_locales
-        @env[Const::ENV_PREFERRED_LOCALES] ||= begin
-
-          # get list of locales and qvalues from the Accept-Language header
+        @_preferred_locales ||= begin
           accepts = Languages.parse_locales(@env[Const::ENV_HTTP_ACCEPT_LANGUAGE].to_s)
 
-          # stub undesirable
-          @env[Const::ENV_UNDESIRABLE_LOCALES] = []
-          accepts.reject! { |l,q| @env[Const::ENV_UNDESIRABLE_LOCALES] << l if q == 0 }
+          @_undesirable_locales = []
+          accepts.reject! { |l,q| @_undesirable_locales << l if q == 0 }
 
           i = 0
-          # sort and uniq preferred locales
           accepts = accepts.sort_by { |_,q| [-q,i+=1] }
-
           accepts.map! { |l,_| l }
           accepts.uniq!
           accepts
@@ -26,7 +21,7 @@ module Rack #:nodoc:
         return nil if provides.empty?
         candidates = preferred_locales & (provides + [Const::WILDCARD])
         if (candidate = candidates.first) == Const::WILDCARD
-          (provides - preferred_locales - @env[Const::ENV_UNDESIRABLE_LOCALES]).first || candidates.at(1)
+          (provides - preferred_locales - @_undesirable_locales).first || candidates.at(1)
         else
           candidate
         end
@@ -34,7 +29,7 @@ module Rack #:nodoc:
 
       def accept_locale?(locale)
         (preferred_locales.include?(locale) || preferred_locales.include?(Const::WILDCARD)) && 
-        !@env[Const::ENV_UNDESIRABLE_LOCALES].include?(locale)
+        !@_undesirable_locales.include?(locale)
       end
 
     end
