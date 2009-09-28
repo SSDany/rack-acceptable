@@ -9,7 +9,7 @@ describe Rack::Acceptable::Formats do
   before :all do
 
     app = lambda do |env|
-      body = env['rack-acceptable.provides.formats'].to_yaml
+      body = env['rack-acceptable.formats'].to_yaml
       size = Rack::Utils::bytesize(body)
       [200, {'Content-Type' => 'text/plain', 'Content-Length' => size.to_s}, [body]]
     end
@@ -62,7 +62,7 @@ describe Rack::Acceptable::Formats do
       request!('HTTP_ACCEPT' => 'image/png;q=0.5')
       @response.should_not be_ok
       @response.status.should == 406
-      @response.body.should == 'Not Acceptable'
+      @response.body.should match %r{Not Acceptable}
 
       request!('HTTP_ACCEPT' => 'image/png;q=0.5,*/*;q=0.3')
       @response.should be_ok

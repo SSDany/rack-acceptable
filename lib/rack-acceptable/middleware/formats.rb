@@ -1,13 +1,15 @@
 module Rack #:nodoc:
   module Acceptable #:nodoc:
 
-    # * Fishes out all acceptable formats. The idea is to let the user
-    #   decide about the preferred one, since the Accept request-header
-    #   is not only thing the response depends on.
+    # * Fishes out all acceptable formats (in the appropriate order).
+    #   The idea is to let the user decide about the preferred one,
+    #   since the Accept request-header is not only thing the response
+    #   depends on.
     # * Stops processing and responds with 406 'Not Acceptable' *only*
     #   if there's no acceptable formats *and* wildcard has a zero quality
-    #   or not explicitly mentioned; i.e, decreases the the number of
-    #   application calls in compliance with notes in RFC 2616, sec. 10.4.7.
+    #   or not explicitly mentioned; i.e, decreases (slightly) the the
+    #   number of application calls in compliance with notes in
+    #   RFC 2616, sec. 10.4.7.
     #
     # ==== Example
     #
@@ -21,8 +23,7 @@ module Rack #:nodoc:
     #
     class Formats
 
-      FORMATS = 'rack-acceptable.provides.formats'
-      NOT_ACCEPTABLE_RESPONSE = [406, {'Content-Type' => 'text/plain'}, [Const::NOT_ACCEPTABLE]].freeze
+      FORMATS = 'rack-acceptable.formats'
 
       #--
       # RFC 2616, section 10.4.7:
@@ -40,25 +41,23 @@ module Rack #:nodoc:
       end
 
       def call(env)
-        accepts = env[Const::ENV_HTTP_ACCEPT].to_s
-        accepts.strip!
-        accepts = Utils.extract_qvalues(accepts)
-        if accepts.empty?
-          env[FORMATS] = [:all]
-        else
+        if accepts = env[Const::ENV_HTTP_ACCEPT] # && !Utils.blank?(accepts)
+          accepts = Utils.extract_qvalues(accepts)
           i = 0
           accepts = accepts.sort_by { |_,q| [-q,i+=1] }
-          accepts.reject! { |t,q| !@types.key?(t) || q == 0 }
+          accepts.reject! { |t,q| q == 0 || !@types.key?(t) }
           if accepts.empty?
-            return NOT_ACCEPTABLE_RESPONSE
+            return Const::NOT_ACCEPTABLE_RESPONSE
           else
             accepts.map! { |t,_| @types[t] }.uniq!
             env[FORMATS] = accepts
           end
+        else
+          env[FORMATS] = [:all]
         end
         @app.call(env)
-      rescue
-        @app.call(env) #FIXME
+      #rescue
+      #  @app.call(env)
       end
 
     end
