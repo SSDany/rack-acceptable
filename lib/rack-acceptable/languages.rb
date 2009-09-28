@@ -65,7 +65,7 @@ module Rack #:nodoc:
       #
       def parse_locales(header)
         ret = Utils.parse_header(header.downcase, HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX)
-        ret.reject! { |l,_| l == LanguageTag::PRIVATEUSE || l == LanguageTag::GRANDFATHERED }
+        ret.reject! { |l,_| l.length == 1 && l != Const::WILDCARD } # acc. to the Language-Tag ABNF
         ret
       rescue
         raise ArgumentError, "Malformed Accept-Language header: #{header.inspect}"
