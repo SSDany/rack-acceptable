@@ -11,7 +11,7 @@ $LOAD_PATH.unshift __DIR__ unless
 module Rack #:nodoc:
   module Acceptable
 
-    autoload :Const           , 'rack-acceptable/constants'
+    autoload :Const           , 'rack-acceptable/const'
 
     autoload :Utils           , 'rack-acceptable/utils'
     autoload :Encodings       , 'rack-acceptable/encodings'
