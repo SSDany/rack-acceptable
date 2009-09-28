@@ -263,7 +263,7 @@ module Rack #:nodoc:
 
         if GRANDFATHERED_TAGS.key?(tag)
           if self.class.canonize_grandfathered
-            tag = GRANDFATHERED_TAGS[tag].first
+            tag = GRANDFATHERED_TAGS[tag]
             raise ArgumentError, "There's no canonical form for grandfathered Language-Tag: #{thing.inspect}" unless tag
           else
             raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
