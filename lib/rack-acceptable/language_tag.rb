@@ -35,7 +35,6 @@ module Rack #:nodoc:
       PRIVATEUSE_REGEX            = /^x(?:-[a-z\d]{1,8})+$/i.freeze
 
       PRIVATEUSE = 'x'.freeze
-      GRANDFATHERED = 'i'.freeze
 
       class << self
 
