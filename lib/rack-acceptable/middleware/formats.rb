@@ -19,11 +19,11 @@ module Rack #:nodoc:
     #     :text => %w(text/plain text/*)
     #     }
     #
-    #   app.use Rack::Acceptable::Formats(@provides)
+    #   use Rack::Acceptable::Formats @provides
     #
     class Formats
 
-      FORMATS = 'rack-acceptable.formats'
+      FORMATS = 'rack-acceptable.formats.candidates'
 
       #--
       # RFC 2616, section 10.4.7:
@@ -41,7 +41,7 @@ module Rack #:nodoc:
       end
 
       def call(env)
-        if accepts = env[Const::ENV_HTTP_ACCEPT] # && !Utils.blank?(accepts)
+        if accepts = env[Const::ENV_HTTP_ACCEPT]
           accepts = Utils.extract_qvalues(accepts)
           i = 0
           accepts = accepts.sort_by { |_,q| [-q,i+=1] }

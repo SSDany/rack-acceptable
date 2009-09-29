@@ -9,7 +9,7 @@ describe Rack::Acceptable::Formats do
   before :all do
 
     app = lambda do |env|
-      body = env['rack-acceptable.formats'].to_yaml
+      body = env['rack-acceptable.formats.candidates'].to_yaml
       size = Rack::Utils::bytesize(body)
       [200, {'Content-Type' => 'text/plain', 'Content-Length' => size.to_s}, [body]]
     end
@@ -24,13 +24,11 @@ describe Rack::Acceptable::Formats do
 
   describe "when there's an Accept request-header" do
 
-    it "detects the best format" do
+    it "detects acceptable formats" do
       request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
       @response.should be_ok
       YAML.load(@response.body).should == [:json]
-    end
 
-    it "respects quality factors" do
       request!('HTTP_ACCEPT' => 'text/plain;q=0.5,application/json;q=0.5')
       @response.should be_ok
       YAML.load(@response.body).should == [:text, :json]
@@ -58,7 +56,7 @@ describe Rack::Acceptable::Formats do
       YAML.load(@response.body).should == [:text]
     end
 
-    it "returns 406 'Not Acceptable' only when there's no acceptable formats" do
+    it "returns 406 'Not Acceptable' only when there's really nothing to provide" do
       request!('HTTP_ACCEPT' => 'image/png;q=0.5')
       @response.should_not be_ok
       @response.status.should == 406
