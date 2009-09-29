@@ -18,10 +18,11 @@ module Rack #:nodoc:
     autoload :Charsets        , 'rack-acceptable/charsets'
     autoload :Languages       , 'rack-acceptable/languages'
     autoload :MIMETypes       , 'rack-acceptable/mimetypes'
-
     autoload :LanguageTag     , 'rack-acceptable/language_tag'
 
     autoload :Formats         , 'rack-acceptable/middleware/formats'
+    autoload :Provides        , 'rack-acceptable/middleware/provides'
+
     autoload :Helpers         , 'rack-acceptable/helpers'
 
   end
