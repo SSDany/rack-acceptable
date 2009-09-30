@@ -20,9 +20,6 @@ module Rack #:nodoc:
 
       CANDIDATE = 'rack-acceptable.provides.candidate'
 
-      LOCK = Mutex.new
-      ACCEPTS = {}
-
       # ==== Parameters
       # app<String>:: Rack application.
       # provides<Array>:: List of available MIME-Types.
@@ -31,7 +28,7 @@ module Rack #:nodoc:
       def initialize(app, provides, options = {})
         raise "You should provide the list of available MIME-Types." if provides.empty?
         @app = app
-        @provides = provides
+        @provides = provides # FIXME
         @lookup = {}
         @force_format = !!options[:force_format]
         if @force_format && options.key?(:default_format)
@@ -71,13 +68,9 @@ module Rack #:nodoc:
         if @lookup.key?(header)
           @lookup[header]
         else
-          accepts = LOCK.synchronize {
-            # TODO: this looks useless, so, bench & profile.
-            ACCEPTS[header] ||= Rack::Acceptable::MIMETypes.parse_accept(header) 
-          }
+          accepts = Rack::Acceptable::MIMETypes.parse_accept(header)
           @lookup[header] = Rack::Acceptable::MIMETypes.detect_best_mime_type(@provides, accepts)
         end
-
       end
 
     end
