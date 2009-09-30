@@ -73,8 +73,7 @@ describe Rack::Acceptable::Provides do
         @response.should be_ok
         @response.body.should == 'text/plain'
 
-        Rack::Acceptable::Provides::LOOKUP.should have_key(header)
-        Rack::Acceptable::Provides::LOOKUP[header].should == 'text/plain'
+        Rack::Acceptable::Provides::ACCEPTS.should have_key(header)
         Rack::Acceptable::MIMETypes.should_not_receive(:parse_accept)
         Rack::Acceptable::MIMETypes.should_not_receive(:detect_best_mime_type)
 
@@ -100,8 +99,7 @@ describe Rack::Acceptable::Provides do
         @response.status.should == 406
         @response.body.should match %r{Not Acceptable}
 
-        Rack::Acceptable::Provides::LOOKUP.should have_key('video/quicktime')
-        Rack::Acceptable::Provides::LOOKUP['video/quicktime'].should == nil
+        Rack::Acceptable::Provides::ACCEPTS.should have_key('video/quicktime')
         Rack::Acceptable::MIMETypes.should_not_receive(:parse_accept)
         Rack::Acceptable::MIMETypes.should_not_receive(:detect_best_mime_type)
 

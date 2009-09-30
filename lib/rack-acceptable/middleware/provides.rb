@@ -12,7 +12,7 @@ module Rack #:nodoc:
     #
     # ==== Example
     #
-    #   use Rack::Acceptable::Provides w(text/x-json application/json, text/plain),
+    #   use Rack::Acceptable::Provides w(text/x-json application/json text/plain),
     #     :force_format   => true,
     #     :default_format => '.txt'
     #
@@ -21,7 +21,7 @@ module Rack #:nodoc:
       CANDIDATE = 'rack-acceptable.provides.candidate'
 
       LOCK = Mutex.new
-      LOOKUP = {}
+      ACCEPTS = {}
 
       # ==== Parameters
       # app<String>:: Rack application.
@@ -32,6 +32,7 @@ module Rack #:nodoc:
         raise "You should provide the list of available MIME-Types." if provides.empty?
         @app = app
         @provides = provides
+        @lookup = {}
         if @force_format = !!options[:force_format]
           if options.key?(:default_format)
             ext = options[:default_format].to_s.strip
@@ -68,15 +69,16 @@ module Rack #:nodoc:
       # Performs negotiation and memoizes result.
       #
       def _negotiate(header)
-        LOCK.synchronize do
-          return LOOKUP[header] if LOOKUP.key?(header)
+        accepts = LOCK.synchronize do
+          ACCEPTS[header] ||= Rack::Acceptable::MIMETypes.parse_accept(header)
         end
 
-        accepts = Rack::Acceptable::MIMETypes.parse_accept(header)
-        preferred = Rack::Acceptable::MIMETypes.detect_best_mime_type(@provides, accepts)
-        LOCK.synchronize do
-          return LOOKUP[header] = preferred
+        if @lookup.key?(header)
+          @lookup[header]
+        else
+          @lookup[header] = Rack::Acceptable::MIMETypes.detect_best_mime_type(@provides, accepts)
         end
+
       end
 
     end
