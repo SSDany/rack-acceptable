@@ -33,11 +33,10 @@ module Rack #:nodoc:
         @app = app
         @provides = provides
         @lookup = {}
-        if @force_format = !!options[:force_format]
-          if options.key?(:default_format)
-            ext = options[:default_format].to_s.strip
-            @_extension = ext[0] == ?. ? ext : ".#{ext}" unless ext.empty?
-          end
+        @force_format = !!options[:force_format]
+        if @force_format && options.key?(:default_format)
+          ext = options[:default_format].to_s.strip
+          @_extension = ext[0] == ?. ? ext : ".#{ext}" unless ext.empty?
         end
       end
 
@@ -69,13 +68,13 @@ module Rack #:nodoc:
       # Performs negotiation and memoizes result.
       #
       def _negotiate(header)
-        accepts = LOCK.synchronize do
-          ACCEPTS[header] ||= Rack::Acceptable::MIMETypes.parse_accept(header)
-        end
-
         if @lookup.key?(header)
           @lookup[header]
         else
+          accepts = LOCK.synchronize {
+            # TODO: this looks useless, so, bench & profile.
+            ACCEPTS[header] ||= Rack::Acceptable::MIMETypes.parse_accept(header) 
+          }
           @lookup[header] = Rack::Acceptable::MIMETypes.detect_best_mime_type(@provides, accepts)
         end
 
