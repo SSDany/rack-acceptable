@@ -11,6 +11,7 @@ module Rack #:nodoc:
       EMPTY_STRING              = ''.freeze
       HYPHEN                    = '-'.freeze
       SEMICOLON                 = ';'.freeze
+      SLASH                     = '/'.freeze
 
       ENV_HTTP_ACCEPT           = 'HTTP_ACCEPT'.freeze
       ENV_HTTP_ACCEPT_ENCODING  = 'HTTP_ACCEPT_ENCODING'.freeze

@@ -1,19 +1,24 @@
 module Rack #:nodoc:
   module Acceptable #:nodoc:
 
+    # Inspired (partially) by the Rack::AcceptFormat.
+    #
     # * Fishes out the best one of available MIME-Types.
-    # * Memoizes results, since the full negotiation is not
-    #   the 'week' (but quick!) lookup.
+    # * Adds an associated format (extension) to the path_info (optional).
     # * Stops processing and responds with 406 'Not Acceptable',
     #   when there's nothing to provide.
+    # * Memoizes results, since the full negotiation is not
+    #   the 'week' (but quick!) lookup.
     #
     # ==== Example
     #
-    #   use Rack::Acceptable::Provides w(text/x-json application/json)
+    #   use Rack::Acceptable::Provides w(text/x-json application/json, text/plain),
+    #     :force_format   => true,
+    #     :default_format => '.txt'
     #
     class Provides
 
-      PREFERRED = 'rack-acceptable.provides.candidate'
+      CANDIDATE = 'rack-acceptable.provides.candidate'
 
       LOCK = Mutex.new
       LOOKUP = {}
@@ -21,23 +26,44 @@ module Rack #:nodoc:
       # ==== Parameters
       # app<String>:: Rack application.
       # provides<Array>:: List of available MIME-Types.
+      # options<Hash>:: Additional options.
       #
-      def initialize(app, provides)
+      def initialize(app, provides, options = {})
         raise "You should provide the list of available MIME-Types." if provides.empty?
-        @app, @provides = app, provides
+        @app = app
+        @provides = provides
+        if @force_format = !!options[:force_format]
+          if options.key?(:default_format)
+            ext = options[:default_format].to_s.strip
+            @_extension = ext[0] == ?. ? ext : ".#{ext}" unless ext.empty?
+          end
+        end
       end
 
       def call(env)
-        if accepts = env[Const::ENV_HTTP_ACCEPT]
-          return Const::NOT_ACCEPTABLE_RESPONSE unless preferred = _negotiate(accepts)
-          env[PREFERRED] = preferred
-        else
-          env[PREFERRED] = @provides.first
+        accepts = env[Const::ENV_HTTP_ACCEPT]
+        preferred = accepts ? _negotiate(accepts) : @provides.first
+
+        return Const::NOT_ACCEPTABLE_RESPONSE unless preferred
+        env[CANDIDATE] = preferred
+        return @app.call(env) unless @force_format
+
+        request = Rack::Request.new(env)
+        path = request.path_info
+        if path != Const::SLASH && ext = _extension_for(preferred)
+          request.path_info = path.sub(/\/*$/, ext)
         end
         @app.call(env)
       end
 
       private
+
+      # Picks out an extension for the MIME-Type given.
+      # Override this to force the usage of another MIME-Type registry.
+      #
+      def _extension_for(thing)
+        Rack::Mime::MIME_TYPES.invert[thing] || @_extension # FIXME
+      end
 
       # Performs negotiation and memoizes result.
       #

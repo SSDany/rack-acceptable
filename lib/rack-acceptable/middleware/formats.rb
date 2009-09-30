@@ -23,7 +23,7 @@ module Rack #:nodoc:
     #
     class Formats
 
-      FORMATS = 'rack-acceptable.formats.candidates'
+      CANDIDATES = 'rack-acceptable.formats.candidates'
 
       #--
       # RFC 2616, section 10.4.7:
@@ -50,10 +50,10 @@ module Rack #:nodoc:
             return Const::NOT_ACCEPTABLE_RESPONSE
           else
             accepts.map! { |t,_| @types[t] }.uniq!
-            env[FORMATS] = accepts
+            env[CANDIDATES] = accepts
           end
         else
-          env[FORMATS] = [:all]
+          env[CANDIDATES] = [:all]
         end
         @app.call(env)
       #rescue
