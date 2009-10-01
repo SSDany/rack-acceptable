@@ -134,10 +134,6 @@ module Rack #:nodoc:
         @nicecased  #.dup #uuuuugh
       end
 
-      def candidates
-        raise NotImplementedError
-      end
-
       #--
       # RFC 4647, sec. 3.3.1 ('Basic Filtering')
       #
@@ -152,6 +148,8 @@ module Rack #:nodoc:
       # script, as used in Germany).
       #++
 
+      # Checks if self matches the Language-Tag passed.
+      #
       # ==== Example
       #   tag = LanguageTag.parse('de-de')
       #   tag.matches?('de-DE-1996') #=> true
@@ -175,6 +173,8 @@ module Rack #:nodoc:
         false
       end
 
+      # Checks if the Language-Tag passed matches self.
+      #
       # ==== Example
       #   tag = LanguageTag.parse('de-Latn-DE')
       #   tag.has_prefix?('de-Latn-DE') #=> true

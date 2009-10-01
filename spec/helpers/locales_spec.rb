@@ -67,8 +67,13 @@ describe Rack::Acceptable::Helpers::Locales do
     request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*;q=0.3,ru;q=0.5,en-GB;q=0.5')
     request.preferred_locale_from('ru','en').should == 'ru'
 
+    request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*;q=0.3,ru;q=0.5,en-GB;q=0.5')
+    request.preferred_locale_from().should == nil
+
   end
 
 end
+
+
 
 # EOF

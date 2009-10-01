@@ -29,7 +29,7 @@ module Rack #:nodoc:
       def initialize(app, provides, options = {})
         raise "You should provide the list of available MIME-Types." if provides.empty?
         @app = app
-        @provides = provides.map { |type| Rack::Acceptable::MIMETypes.parse_media_range(type) << type }
+        @provides = provides.map { |type| MIMETypes.parse_media_range(type) << type }
         @lookup = {}
         @force_format = !!options[:force_format]
         if @force_format && options.key?(:default_format)
@@ -71,8 +71,8 @@ module Rack #:nodoc:
         if @lookup.key?(header)
           @lookup[header]
         else
-          accepts = Rack::Acceptable::MIMETypes.parse_accept(header)
-          @lookup[header] = Rack::Acceptable::MIMETypes.detect_best_mime_type(@provides, accepts)
+          accepts = MIMETypes.parse_accept(header)
+          @lookup[header] = MIMETypes.detect_best_mime_type(@provides, accepts)
         end
       end
 
