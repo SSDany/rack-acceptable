@@ -19,6 +19,7 @@ module Rack #:nodoc:
     class Provides
 
       CANDIDATE = 'rack-acceptable.provides.candidate'
+      CANDIDATE_INFO = 'rack-acceptable.provides.candidate_info'
 
       # ==== Parameters
       # app<String>:: Rack application.
@@ -28,7 +29,7 @@ module Rack #:nodoc:
       def initialize(app, provides, options = {})
         raise "You should provide the list of available MIME-Types." if provides.empty?
         @app = app
-        @provides = provides # FIXME
+        @provides = provides.map { |type| Rack::Acceptable::MIMETypes.parse_media_range(type) << type }
         @lookup = {}
         @force_format = !!options[:force_format]
         if @force_format && options.key?(:default_format)
@@ -42,12 +43,14 @@ module Rack #:nodoc:
         preferred = accepts ? _negotiate(accepts) : @provides.first
 
         return Const::NOT_ACCEPTABLE_RESPONSE unless preferred
-        env[CANDIDATE] = preferred
+        simple = preferred.last
+        env[CANDIDATE] = simple
+        env[CANDIDATE_INFO] = preferred[0..3]
         return @app.call(env) unless @force_format
 
         request = Rack::Request.new(env)
         path = request.path_info
-        if path != Const::SLASH && ext = _extension_for(preferred)
+        if path != Const::SLASH && ext = _extension_for(simple)
           request.path_info = path.sub(/\/*$/, ext)
         end
         @app.call(env)
