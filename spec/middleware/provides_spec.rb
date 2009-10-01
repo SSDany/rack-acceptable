@@ -89,14 +89,14 @@ describe Rack::Acceptable::Provides do
         request!('HTTP_ACCEPT' => 'image/png;q=0.5')
         @response.should_not be_ok
         @response.status.should == 406
-        @response.body.should match %r{Not Acceptable}
+        @response.body.should match %r{could not be found}
       end
 
       it "memoizes results" do
         request!('HTTP_ACCEPT' => 'video/quicktime')
         @response.should_not be_ok
         @response.status.should == 406
-        @response.body.should match %r{Not Acceptable}
+        @response.body.should match %r{could not be found}
 
         Rack::Acceptable::MIMETypes.should_not_receive(:parse_accept)
         Rack::Acceptable::MIMETypes.should_not_receive(:detect_best_mime_type)
@@ -104,7 +104,7 @@ describe Rack::Acceptable::Provides do
         request!('HTTP_ACCEPT' => 'video/quicktime')
         @response.should_not be_ok
         @response.status.should == 406
-        @response.body.should match %r{Not Acceptable}
+        @response.body.should match %r{could not be found}
       end
 
     end

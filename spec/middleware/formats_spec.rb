@@ -60,7 +60,7 @@ describe Rack::Acceptable::Formats do
       request!('HTTP_ACCEPT' => 'image/png;q=0.5')
       @response.should_not be_ok
       @response.status.should == 406
-      @response.body.should match %r{Not Acceptable}
+      @response.body.should match %r{could not be found}
 
       request!('HTTP_ACCEPT' => 'image/png;q=0.5,*/*;q=0.3')
       @response.should be_ok
