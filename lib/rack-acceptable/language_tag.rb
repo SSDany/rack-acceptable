@@ -7,8 +7,34 @@ module Rack #:nodoc:
     #
     class LanguageTag
 
-      path = IO.read(::File.expand_path(::File.join(::File.dirname(__FILE__), 'data', 'grandfathered_language_tags.yml')))
-      GRANDFATHERED_TAGS = YAML.load(path)
+      GRANDFATHERED_TAGS = {
+        'art-lojban'  => 'jbo' ,
+        'cel-gaulish' => nil   ,
+        'en-gb-oed'   => nil   ,
+        'i-ami'       => 'ami' ,
+        'i-bnn'       => 'bnn' ,
+        'i-default'   => nil   ,
+        'i-enochian'  => nil   ,
+        'i-hak'       => 'hak' ,
+        'i-klingon'   => 'tlh' ,
+        'i-lux'       => 'lb'  ,
+        'i-mingo'     => nil   ,
+        'i-navajo'    => 'nv'  ,
+        'i-pwn'       => 'pwn' ,
+        'i-tao'       => 'tao' ,
+        'i-tay'       => 'tay' ,
+        'i-tsu'       => 'tsu' ,
+        'no-bok'      => 'nb'  ,
+        'no-nyn'      => 'nn'  ,
+        'sgn-be-fr'   => 'sfb' ,
+        'sgn-be-nl'   => 'vgt' ,
+        'sgn-ch-de'   => 'sgg' ,
+        'zh-guoyu'    => 'cmn' ,
+        'zh-hakka'    => 'hak' ,
+        'zh-min'      => nil   ,
+        'zh-min-nan'  => 'nan' ,
+        'zh-xiang'    => 'hsn' 
+      }.freeze
 
       attr_accessor :primary, :extlang, :script, :region, :variants, :extensions, :privateuse
 
