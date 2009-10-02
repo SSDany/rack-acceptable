@@ -217,6 +217,10 @@ module Rack #:nodoc:
       REGISTRY = {}
       EXTENSIONS = {}
 
+      # Registers the new MIME-Type and associated extensions.
+      # The first one of extensions will be treated as the 'preferred'
+      # for the MIME-Type.
+      #
       def register(thing, *extensions)
         return if extensions.empty?
         extensions.map! { |ext| ext[0] == ?. ? ext : ".#{ext}" }
@@ -225,6 +229,7 @@ module Rack #:nodoc:
         nil
       end
 
+      # Deletes the MIME-Type (and associated extensions) from registry.
       def delete(thing)
         REGISTRY.delete_if { |_,v| v == thing }
         EXTENSIONS.delete thing
@@ -239,12 +244,15 @@ module Rack #:nodoc:
         EXTENSIONS.fetch thing, fallback
       end
 
+      # Resets the registry, i.e removes all and loads
+      # the default set of the MIME-Types.
       def reset
         EXTENSIONS.clear
         REGISTRY.clear
         load_from(REGISTRY_PATH)
       end
 
+      # Loads the set of MIME-Types from the apache-compatible file.
       def load_from(file)
         open(file) do |io|
           io.each do |line|

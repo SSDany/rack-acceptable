@@ -1,7 +1,19 @@
-text/html					html htm
+application/atom+xml				atom
 application/javascript				js
 application/json				json
 application/xhtml+xml				xhtml
 application/xml					xml
+application/xml-dtd				dtd
 application/xslt+xml				xslt
+application/zip					zip
+image/bmp					bmp
+image/gif					gif
+image/jpeg					jpeg jpg jpe
+image/png					png
+image/tiff					tiff tif
+image/vnd.djvu					djvu djv
+image/x-icon					ico
+text/css					css
+text/csv					csv
+text/html					html htm
 text/plain					txt text conf log
