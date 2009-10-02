@@ -18,8 +18,9 @@ module Rack #:nodoc:
     autoload :LanguageTag     , 'rack-acceptable/language_tag'
 
     # request and mixins
-    autoload :Locales         , 'rack-acceptable/locales'
-    autoload :Headers         , 'rack-acceptable/headers'
+    autoload :Headers         , 'rack-acceptable/mixin/headers'
+    autoload :Locales         , 'rack-acceptable/mixin/locales'
+    autoload :Media           , 'rack-acceptable/mixin/media'
     autoload :Request         , 'rack-acceptable/request'
 
     # middleware

@@ -6,7 +6,7 @@ describe Rack::Acceptable::MIMETypes, ".detect_best_mime_type" do
 
     helper = lambda do |header|
       env = Rack::MockRequest.env_for('/', 'HTTP_ACCEPT' => header)
-      accepts = Rack::Acceptable::Request.new(env).http_accept
+      accepts = Rack::Acceptable::Request.new(env).acceptable_mime_types
       Rack::Acceptable::MIMETypes.detect_best_mime_type(@snippets, accepts)
     end
 

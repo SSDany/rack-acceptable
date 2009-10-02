@@ -1,5 +1,4 @@
 require 'rack-acceptable/utils'
-require 'rack-acceptable/mimetypes'
 
 module Rack #:nodoc:
   module Acceptable #:nodoc:
@@ -15,7 +14,7 @@ module Rack #:nodoc:
       #   For example, one of Content-Codings is not a 'token',
       #   one of quality factors is malformed etc.
       #
-      def http_accept_encoding
+      def acceptable_encodings
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_ENCODING].to_s.downcase,
           Utils::HTTP_ACCEPT_ENCODING_REGEX)
@@ -34,7 +33,7 @@ module Rack #:nodoc:
       #   For example, one of Charsets is not a 'token',
       #   one of quality factors is malformed etc.
       #
-      def http_accept_charset
+      def acceptable_charsets
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_CHARSET].to_s.downcase,
           Utils::HTTP_ACCEPT_CHARSET_REGEX)
@@ -58,7 +57,7 @@ module Rack #:nodoc:
       # * It does *not* perform 'convenient transformations' (downcasing of primary tags etc).
       #   In other words, it parses Accept-Language header in unpretentious manner.
       #
-      def http_accept_language
+      def acceptable_languages
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_LANGUAGE].to_s,
           Utils::HTTP_ACCEPT_LANGUAGE_REGEX)
@@ -68,20 +67,16 @@ module Rack #:nodoc:
       end
 
       # ==== Returns
-      # An Array with *completely* parsed MIME-Types (incl. qvalues
-      # and accept-extensions; see Rack::Acceptable::MIMETypes).
-      # Default qvalue is 1.0.
+      # An Array with Media-Ranges (as +Strings+) / wildcards and
+      # associated qvalues. Default qvalue is 1.0.
       #
       # ==== Raises
       # ArgumentError::
-      #   Syntax of the The Accept request-header is bad.
-      #   For example, one of Media-Ranges is not in a RFC 'Media-Range'
-      #   pattern (type or subtype is invalid, or there's something like "*/foo")
-      #   or, at last, one of MIME-Types has malformed qvalue.
+      #   There's a malformed qvalue in header.
       #
-      def http_accept
-        header = env[Const::ENV_HTTP_ACCEPT].to_s
-        header.strip.split(Utils::COMMA_WS_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
+      def acceptable_media_ranges
+        header = env[Const::ENV_HTTP_ACCEPT].to_s.strip
+        Utils.extract_qvalues(header)
       end
 
     end

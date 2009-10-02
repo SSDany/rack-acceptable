@@ -29,11 +29,11 @@ RBench.run(TIMES) do
       request1 = Rack::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header.dup))
       request2 = Rack::Acceptable::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header.dup))
       request1.accept_encoding
-      request2.http_accept_encoding
+      request2.acceptable_encodings
 
       report header.inspect, TIMES do
         one { request1.accept_encoding }
-        two { request2.http_accept_encoding }
+        two { request2.acceptable_encodings }
       end
 
     end

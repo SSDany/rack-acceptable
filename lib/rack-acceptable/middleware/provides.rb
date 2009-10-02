@@ -72,7 +72,7 @@ module Rack #:nodoc:
         if @lookup.key?(request.env[Const::ENV_HTTP_ACCEPT])
           @lookup[header]
         else
-          accepts = request.http_accept
+          accepts = request.acceptable_mime_types
           @lookup[header] = accepts.empty? ? @provides.first : MIMETypes.detect_best_mime_type(@provides, accepts)
         end
       end

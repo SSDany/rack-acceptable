@@ -10,6 +10,7 @@ module Rack #:nodoc:
 
       MEDIA_RANGE_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})\/(#{Utils::TOKEN_PATTERN})\s*$/o.freeze
 
+      #--
       # RFC 2616, sec. 3.7:
       # The type, subtype, and parameter attribute names are case-
       # insensitive. Parameter values might or might not be case-sensitive,
@@ -18,6 +19,7 @@ module Rack #:nodoc:
       # attribute and its value. The presence or absence of a parameter might
       # be significant to the processing of a media-type, depending on its
       # definition within the media type registry.
+      #++
 
       # ==== Parameters
       # thing<String>::
