@@ -18,15 +18,17 @@ module Rack #:nodoc:
       #
       def acceptable_mime_types
         @_acceptable_mime_types ||= begin
-          header = env[Const::ENV_HTTP_ACCEPT].to_s
-          header.strip.split(Utils::COMMA_WS_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
+          header = env[Const::ENV_HTTP_ACCEPT].to_s.strip
+          header.split(Utils::COMMA_WS_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
         end
       end
 
       # Checks if the MIME-Type passed acceptable.
       def accept_mime_type?(thing)
-        qvalue = qualify_mime_type(thing, acceptable_mime_types)
+        qvalue = MIMETypes.qualify_mime_type(thing, acceptable_mime_types)
         qvalue > 0
+      rescue
+        false
       end
 
     end
