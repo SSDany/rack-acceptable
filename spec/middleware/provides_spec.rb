@@ -20,6 +20,7 @@ describe Rack::Acceptable::Provides do
     @provides.concat %w(text/x-json application/json)
     @provides.concat %w(application/xml text/xml)
     @provides.concat %w(text/plain)
+    Rack::Acceptable::MIMETypes.reset
   end
 
   describe "when there's an Accept request-header" do
@@ -176,6 +177,11 @@ describe Rack::Acceptable::Provides do
       @response.body.should == '/rack/acceptable.whatever.txt'
     end
 
+  end
+
+  after :all do
+    Rack::Acceptable::MIMETypes::REGISTRY.clear
+    Rack::Acceptable::MIMETypes::EXTENSIONS.clear
   end
 
 end

@@ -42,9 +42,8 @@ module Rack #:nodoc:
         type.downcase!
         subtype.downcase!
 
-        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
-          type == Const::WILDCARD &&
-          subtype != Const::WILDCARD
+        raise ArgumentError,
+          "Malformed MIME-Type: #{thing}" if type == Const::WILDCARD && subtype != Const::WILDCARD
 
         params = {}
         snippets.each do |pair|
@@ -80,9 +79,8 @@ module Rack #:nodoc:
         type.downcase!
         subtype.downcase!
 
-        raise ArgumentError, "Malformed MIME-Type: #{thing}" if
-          type == Const::WILDCARD &&
-          subtype != Const::WILDCARD
+        raise ArgumentError,
+          "Malformed MIME-Type: #{thing}" if type == Const::WILDCARD && subtype != Const::WILDCARD
 
         qvalue = Utils::QVALUE_DEFAULT
         params = {}

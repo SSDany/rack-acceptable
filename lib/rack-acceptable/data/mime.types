@@ -1,4 +1,7 @@
+text/html					html htm
+application/javascript				js
+application/json				json
 application/xhtml+xml				xhtml
 application/xml					xml
 application/xslt+xml				xslt
-text/html					html htm
+text/plain					txt text conf log

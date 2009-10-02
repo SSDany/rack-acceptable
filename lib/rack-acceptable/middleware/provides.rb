@@ -60,9 +60,11 @@ module Rack #:nodoc:
 
       # Picks out an extension for the MIME-Type given.
       # Override this to force the usage of another MIME-Type registry.
+      # See Rack::Acceptable::MIMETypes about the addition of new
+      # entries to the registry etc.
       #
       def _extension_for(thing)
-        Rack::Mime::MIME_TYPES.invert[thing] || @_extension # FIXME
+        MIMETypes.extension_for(thing) || @_extension
       end
 
       # Performs negotiation and memoizes result.
