@@ -24,6 +24,9 @@ describe Rack::Acceptable::Media do
       request = fake_request('HTTP_ACCEPT' => 'application/xml, text/*;q=0.3')
       request.accept_mime_type?('video/quicktime').should == false
       request.accept_mime_type?('image/jpeg').should == false
+
+      request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0,text/*')
+      request.accept_mime_type?('text/plain').should == false
     end
 
     it "even if the thing passed is not a well-formed MIME-Type" do
