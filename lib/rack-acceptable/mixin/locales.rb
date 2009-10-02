@@ -44,6 +44,8 @@ module Rack #:nodoc:
           accepts = accepts.sort_by { |_,q| [-q,i+=1] }
           accepts.map! { |l,_| l }
           accepts.uniq!
+          @_undesirable_locales -= accepts
+          # TODO: should we treat 'en;q=0,en;q=1' as "'en' is acceptable" ?
           accepts
         end
       end

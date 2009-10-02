@@ -100,6 +100,9 @@ describe Rack::Acceptable::Locales do
 
       request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'bogus!')
       request.accept_locale?('whatever').should == false
+
+      request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB;q=0,en-Latn;q=0.1')
+      request.accept_locale?('en').should == true
     end
 
   end
@@ -140,12 +143,16 @@ describe Rack::Acceptable::Locales do
       request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*;q=0.3,ru;q=0.5,en-GB;q=0.5')
       request.preferred_locale_from('ru','en').should == 'ru'
 
+      request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB;q=0,en-Latn;q=0.1,ru;q=0,*')
+      request.preferred_locale_from('en','ru').should == 'en'
+
       request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*;q=0.3,ru;q=0.5,en-GB;q=0.5')
       request.preferred_locale_from().should == nil
 
     end
 
   end
+
 end
 
 # EOF
