@@ -62,6 +62,8 @@ module Rack #:nodoc:
       def accept_locale?(locale)
         (preferred_locales.include?(locale) || preferred_locales.include?(Const::WILDCARD)) && 
         !@_undesirable_locales.include?(locale)
+      rescue
+        false
       end
 
     end
