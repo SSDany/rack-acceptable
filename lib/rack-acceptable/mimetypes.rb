@@ -1,5 +1,7 @@
 # encoding: binary
 
+require 'rack-acceptable/utils'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     module MIMETypes
@@ -183,6 +185,32 @@ module Rack #:nodoc:
         end
 
         [quality, rate, specificity, index]
+      end
+
+      # ==== Parameters
+      # provides<Array>:: The Array of available MIME-Types (snippets or parsed media-ranges). Could be empty.
+      # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
+      #
+      # ==== Returns
+      # The best one of available MIME-Types or +nil+.
+      #
+      # ==== Raises
+      # Same things as Utils#parse_media_range.
+      #
+      # ==== Notes
+      # Acceptable MIME-Types are supposed to have *downcased* and *well-formed*
+      # type, subtype, parameter's keys (according to RFC 2616, enumerated things
+      # are case-insensitive too), and *sensible* qvalues ("real numbers in the
+      # range 0 through 1, where 0 is the minimum and 1 the maximum value").
+      #
+      def detect_best_mime_type(provides, accepts)
+        return nil if provides.empty?
+        return provides.first if accepts.empty?
+
+        i = 0
+        accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
+        candidate = provides.map { |t| MIMETypes.weigh_mime_type(t,accepts) << t }.max_by { |t| t[0..3] } #instead of #sort
+        candidate.at(0) == 0 ? nil : candidate.last
       end
 
     end

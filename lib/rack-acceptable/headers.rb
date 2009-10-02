@@ -1,3 +1,6 @@
+require 'rack-acceptable/utils'
+require 'rack-acceptable/mimetypes'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Headers

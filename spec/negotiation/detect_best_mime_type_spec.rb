@@ -1,13 +1,13 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Utils, ".detect_best_mime_type" do
+describe Rack::Acceptable::MIMETypes, ".detect_best_mime_type" do
 
   it "figures out which MIME-Types are acceptable" do
 
     helper = lambda do |header|
       env = Rack::MockRequest.env_for('/', 'HTTP_ACCEPT' => header)
       accepts = Rack::Acceptable::Request.new(env).http_accept
-      Rack::Acceptable::Utils.detect_best_mime_type(@snippets, accepts)
+      Rack::Acceptable::MIMETypes.detect_best_mime_type(@snippets, accepts)
     end
 
     @snippets = ["application/xbel+xml", "application/xml"]

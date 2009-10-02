@@ -1,3 +1,5 @@
+require 'rack-acceptable/utils'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Locales
@@ -46,6 +48,7 @@ module Rack #:nodoc:
         end
       end
 
+      # Returns the best one of locales passed or +nil+.
       def preferred_locale_from(*provides)
         candidates = preferred_locales & (provides << Const::WILDCARD)
         if (candidate = candidates.first) == Const::WILDCARD
@@ -55,6 +58,7 @@ module Rack #:nodoc:
         end
       end
 
+      # Checks if locale passed acceptable.
       def accept_locale?(locale)
         (preferred_locales.include?(locale) || preferred_locales.include?(Const::WILDCARD)) && 
         !@_undesirable_locales.include?(locale)

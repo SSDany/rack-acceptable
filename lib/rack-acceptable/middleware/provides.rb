@@ -1,3 +1,5 @@
+require 'rack-acceptable/request'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
 
@@ -71,7 +73,7 @@ module Rack #:nodoc:
           @lookup[header]
         else
           accepts = request.http_accept
-          @lookup[header] = accepts.empty? ? @provides.first : Utils.detect_best_mime_type(@provides, accepts)
+          @lookup[header] = accepts.empty? ? @provides.first : MIMETypes.detect_best_mime_type(@provides, accepts)
         end
       end
 

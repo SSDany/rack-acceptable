@@ -1,3 +1,5 @@
+require 'rack-acceptable/headers'
+
 module Rack #:nodoc:
   module Acceptable
     class Request < Rack::Request
