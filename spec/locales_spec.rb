@@ -11,6 +11,66 @@ describe Rack::Acceptable::Locales do
     @_request.new(env)
   end
 
+  describe ".acceptable_locales" do
+
+    before :all do
+      @parser = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_locales }
+      @qvalue = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_locales.first.last }
+      @sample = 'en'
+      @message = %r{Malformed Accept-Language header}
+    end
+
+    describe "when parsing standalone snippet" do
+
+      it_should_behave_like 'simple qvalues parser'
+
+      it "raises an ArgumentError when there's a malformed Language-Range" do
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "veryverylongstring").acceptable_locales }.
+        should raise_error ArgumentError, @message
+
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "en-gb-veryverylongstring").acceptable_locales }.
+        should raise_error ArgumentError, @message
+
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "non_alpha").acceptable_locales }.
+        should raise_error ArgumentError, @message
+
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "header=malformed;q=0.3").acceptable_locales }.
+        should raise_error ArgumentError, @message
+
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "q=0.3").acceptable_locales }.
+        should raise_error ArgumentError, @message
+      end
+
+      it "downcases locale" do
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'EN-GB;q=0.1').acceptable_locales
+        qvalues.should == [['en', 0.1]]
+      end
+
+      it "ignores all language subtags except the primary one" do
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB;q=0.1').acceptable_locales
+        qvalues.should == [['en', 0.1]]
+
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'sl-rozaj;q=0.5').acceptable_locales
+        qvalues.should == [['sl', 0.5]]
+
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB-a-xxx-b-yyy-x-private;q=0.5').acceptable_locales
+        qvalues.should == [['en', 0.5]]
+      end
+
+      it "ignores 'i' and 'x' singletons" do
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'x-pig-latin;q=0.1,en-GB;q=0.5').acceptable_locales
+        qvalues.should == [['en', 0.5]]
+
+        qvalues = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB;q=0.5, i-enochian;q=0.03').acceptable_locales
+        qvalues.should == [['en', 0.5]]
+      end
+
+    end
+
+    it_should_behave_like 'simple parser of 1#(element) lists'
+
+  end
+
   it "knows about preferred locales" do
     request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB,sl-Latn-rozaj,i-enochian;q=0.03')
     request.preferred_locales.should == ['en', 'sl']
@@ -73,7 +133,5 @@ describe Rack::Acceptable::Locales do
   end
 
 end
-
-
 
 # EOF
