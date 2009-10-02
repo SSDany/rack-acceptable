@@ -3,7 +3,7 @@ module Rack #:nodoc:
     module Headers
 
       # ==== Returns
-      # Result of parsing. An Array with wildcards / *downcased* Content-Codings
+      # An Array with wildcards / *downcased* Content-Codings
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
@@ -22,7 +22,7 @@ module Rack #:nodoc:
       end
 
       # ==== Returns
-      # Result of parsing, an Array with wildcards / *downcased* Charsets and
+      # An Array with wildcards / *downcased* Charsets and
       # associated quality factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
@@ -41,7 +41,7 @@ module Rack #:nodoc:
       end
 
       # ==== Returns
-      # Result of parsing. An Array with wildcards / Language-Tags (as +Strings+)
+      # An Array with wildcards / Language-Tags (as +Strings+)
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
@@ -65,8 +65,9 @@ module Rack #:nodoc:
       end
 
       # ==== Returns
-      # Result of parsing, an Array with completely parsed MIME-Types
-      # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
+      # An Array with *completely* parsed MIME-Types (incl. qvalues
+      # and accept-extensions; see Rack::Acceptable::MIMETypes).
+      # Default qvalue is 1.0.
       #
       # ==== Raises
       # ArgumentError::

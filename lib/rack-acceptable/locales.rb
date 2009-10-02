@@ -3,7 +3,7 @@ module Rack #:nodoc:
     module Locales
 
       # ==== Returns
-      # Result of parsing. An Array with wildcards / primary subtags (as +Strings+)
+      # An Array with wildcards / primary subtags (as +Strings+)
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #
       # ==== Raises
