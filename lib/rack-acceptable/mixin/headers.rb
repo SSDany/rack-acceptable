@@ -75,8 +75,10 @@ module Rack #:nodoc:
       #   There's a malformed qvalue in header.
       #
       def acceptable_media_ranges
-        header = env[Const::ENV_HTTP_ACCEPT].to_s.strip
-        Utils.extract_qvalues(header)
+        Utils.extract_qvalues(env[Const::ENV_HTTP_ACCEPT].to_s)
+      rescue
+        raise ArgumentError,
+        "Malformed Accept header: #{env[Const::ENV_HTTP_ACCEPT].inspect}"
       end
 
     end

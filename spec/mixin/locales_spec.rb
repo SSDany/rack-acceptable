@@ -97,6 +97,9 @@ describe Rack::Acceptable::Locales do
       request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'en-GB,*;q=0.3')
       request.accept_locale?('it').should == true
       request.accept_locale?('en').should == true
+
+      request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'bogus!')
+      request.accept_locale?('whatever').should == false
     end
 
   end
