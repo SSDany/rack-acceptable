@@ -215,6 +215,49 @@ module Rack #:nodoc:
         candidate.at(0) == 0 ? nil : candidate.last
       end
 
+      REGISTRY_PATH = ::File.expand_path(::File.join(::File.dirname(__FILE__), 'data', 'mime.types')).freeze
+      REGISTRY = {}
+      EXTENSIONS = {}
+
+      def register(thing, *extensions)
+        return if extensions.empty?
+        extensions.map! { |ext| ext[0] == ?. ? ext : ".#{ext}" }
+        extensions.each { |ext| REGISTRY[ext] = thing }
+        EXTENSIONS[thing] = extensions.first
+        nil
+      end
+
+      def delete(thing)
+        REGISTRY.delete_if { |_,v| v == thing }
+        EXTENSIONS.delete thing
+      end
+
+      def lookup(ext, fallback = 'application/octet-stream')
+        ext = ".#{ext}" unless ext[0] == ?.
+        REGISTRY.fetch ext, fallback
+      end
+
+      def extension_for(thing, fallback = nil)
+        EXTENSIONS.fetch thing, fallback
+      end
+
+      def reset
+        EXTENSIONS.clear
+        REGISTRY.clear
+        load_from(REGISTRY_PATH)
+      end
+
+      def load_from(file)
+        open(file) do |io|
+          io.each do |line|
+            next if /^#/ === line
+            line.strip!
+            register *line.split(/\s+/)
+          end
+        end
+        true
+      end
+
     end
   end
 end
