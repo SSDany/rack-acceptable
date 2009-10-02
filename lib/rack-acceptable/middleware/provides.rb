@@ -39,16 +39,14 @@ module Rack #:nodoc:
       end
 
       def call(env)
-        accepts = env[Const::ENV_HTTP_ACCEPT]
-        preferred = accepts ? _negotiate(accepts) : @provides.first
+        request = Rack::Acceptable::Request.new(env)
+        return Const::NOT_ACCEPTABLE_RESPONSE unless preferred = _negotiate(request)
 
-        return Const::NOT_ACCEPTABLE_RESPONSE unless preferred
         simple = preferred.last
-        env[CANDIDATE] = simple
-        env[CANDIDATE_INFO] = preferred[0..3]
+        request.env[CANDIDATE] = simple
+        request.env[CANDIDATE_INFO] = preferred[0..3]
         return @app.call(env) unless @force_format
 
-        request = Rack::Request.new(env)
         path = request.path_info
         if path != Const::SLASH && ext = _extension_for(simple)
           request.path_info = path.sub(/\/*$/, ext)
@@ -67,12 +65,13 @@ module Rack #:nodoc:
 
       # Performs negotiation and memoizes result.
       #
-      def _negotiate(header)
-        if @lookup.key?(header)
+      def _negotiate(request)
+        header = request.env[Const::ENV_HTTP_ACCEPT]
+        if @lookup.key?(request.env[Const::ENV_HTTP_ACCEPT])
           @lookup[header]
         else
-          accepts = MIMETypes.parse_accept(header)
-          @lookup[header] = MIMETypes.detect_best_mime_type(@provides, accepts)
+          accepts = request.http_accept
+          @lookup[header] = accepts.empty? ? @provides.first : Utils.detect_best_mime_type(@provides, accepts)
         end
       end
 

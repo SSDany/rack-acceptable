@@ -1,12 +1,12 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Encodings, ".detect_best_encoding" do
+describe Rack::Acceptable::Utils, ".detect_best_encoding" do
 
   it "figures out which Content-Codings are acceptable" do
     # adapted from rack specs
 
     helper = lambda do |provides, *accepts|
-      Rack::Acceptable::Encodings.detect_best_encoding(provides, accepts)
+      Rack::Acceptable::Utils.detect_best_encoding(provides, accepts)
     end
 
     helper[%w(identity)               , ['*', 0.0]                        ].should == nil

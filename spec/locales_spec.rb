@@ -1,9 +1,9 @@
-require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
+require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
-describe Rack::Acceptable::Helpers::Locales do
+describe Rack::Acceptable::Locales do
 
   before :all do
-    @_request = Class.new(Rack::Request) { include Rack::Acceptable::Helpers::Locales }
+    @_request = Class.new(Rack::Request) { include Rack::Acceptable::Locales }
   end
 
   def fake_request(opts = {})

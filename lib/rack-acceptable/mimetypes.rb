@@ -6,24 +6,6 @@ module Rack #:nodoc:
 
       module_function
 
-      # ==== Parameters
-      # header<String>:: The Accept request-header.
-      #
-      # ==== Raises
-      # ArgumentError::
-      #   Syntax of the header passed is bad.
-      #   For example, one of Media-Ranges is not in a RFC 'Media-Range'
-      #   pattern (type or subtype is invalid, or there's something like "*/foo")
-      #   or, at last, one of MIME-Types has malformed qvalue.
-      #
-      # ==== Returns
-      # Result of parsing, an Array with completely parsed MIME-Types
-      # (incl. qvalues and accept-extensions). Default qvalue is 1.0.
-      #
-      def parse_accept(header)
-        header.strip.split(Utils::COMMA_WS_SPLITTER).map! { |entry| parse_mime_type(entry) }
-      end
-
       MEDIA_RANGE_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})\/(#{Utils::TOKEN_PATTERN})\s*$/o.freeze
 
       # RFC 2616, sec. 3.7:
@@ -201,32 +183,6 @@ module Rack #:nodoc:
         end
 
         [quality, rate, specificity, index]
-      end
-
-      # ==== Parameters
-      # provides<Array>:: The Array of available MIME-Types (snippets or parsed media-ranges). Could be empty.
-      # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
-      #
-      # ==== Returns
-      # The best one of available MIME-Types or +nil+.
-      #
-      # ==== Raises
-      # Same things as Utils#parse_media_range.
-      #
-      # ==== Notes
-      # Acceptable MIME-Types are supposed to have *downcased* and *well-formed*
-      # type, subtype, parameter's keys (according to RFC 2616, enumerated things
-      # are case-insensitive too), and *sensible* qvalues ("real numbers in the
-      # range 0 through 1, where 0 is the minimum and 1 the maximum value").
-      #
-      def detect_best_mime_type(provides, accepts)
-        return nil if provides.empty?
-        return provides.first if accepts.empty?
-
-        i = 0
-        accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
-        candidate = provides.map { |t| weigh_mime_type(t,accepts) << t }.max_by { |t| t[0..3] } #instead of #sort
-        candidate.at(0) == 0 ? nil : candidate.last
       end
 
     end

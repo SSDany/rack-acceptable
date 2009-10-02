@@ -26,11 +26,16 @@ RBench.run(TIMES) do
 
   group "Weighing of the MIME-Types, each of #{PROVIDES.inspect}" do
     HEADERS.each do |header|
-      accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
+
+      env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => header)
+      request = Rack::Acceptable::Request.new(env)
+      accepts = request.http_accept
+
       report header.inspect do
         one { PROVIDES.each { |t| MIMEParse.fitness_and_quality_parsed(t,accepts) }}
         two { PROVIDES.each { |t| Rack::Acceptable::MIMETypes.weigh_mime_type(t,accepts) }}
       end
+
     end
 
     summary ''
@@ -38,13 +43,15 @@ RBench.run(TIMES) do
 
   group "Detecting the best MIME-Type, one of #{PROVIDES.inspect}" do
     HEADERS.each do |header|
+
+      env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => header)
+      request = Rack::Acceptable::Request.new(env)
+
       report header.inspect do
         one { MIMEParse::best_match(PROVIDES, header) }
-        two do
-          accepts = Rack::Acceptable::MIMETypes::parse_accept(header)
-          Rack::Acceptable::MIMETypes::detect_best_mime_type(PROVIDES, accepts) 
-        end
+        two { Rack::Acceptable::Utils.detect_best_mime_type(PROVIDES, request.http_accept) }
       end
+
     end
 
     summary ''

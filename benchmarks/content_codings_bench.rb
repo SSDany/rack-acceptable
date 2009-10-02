@@ -26,13 +26,14 @@ RBench.run(TIMES) do
 
     HEADERS.each do |header|
 
-      env = Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header)
-      request = Rack::Request.new(env)
-      request.accept_encoding
+      request1 = Rack::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header.dup))
+      request2 = Rack::Acceptable::Request.new(Rack::MockRequest.env_for('/', 'HTTP_ACCEPT_ENCODING' => header.dup))
+      request1.accept_encoding
+      request2.http_accept_encoding
 
       report header.inspect, TIMES do
-        one { request.accept_encoding }
-        two { Rack::Acceptable::Encodings.parse_accept_encoding(header) }
+        one { request1.accept_encoding }
+        two { request2.http_accept_encoding }
       end
 
     end
@@ -64,7 +65,7 @@ RBench.run(TIMES) do
       accepts = Rack::Acceptable::Utils::extract_qvalues(header)
       report header.inspect, TIMES*10 do
         one { Rack::Utils.select_best_encoding PROVIDES, accepts }
-        two { Rack::Acceptable::Encodings::detect_best_encoding PROVIDES, accepts }
+        two { Rack::Acceptable::Utils::detect_best_encoding PROVIDES, accepts }
       end
     end
 

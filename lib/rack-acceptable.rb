@@ -11,19 +11,20 @@ $LOAD_PATH.unshift __DIR__ unless
 module Rack #:nodoc:
   module Acceptable
 
+    # common
     autoload :Const           , 'rack-acceptable/const'
-
     autoload :Utils           , 'rack-acceptable/utils'
-    autoload :Encodings       , 'rack-acceptable/encodings'
-    autoload :Charsets        , 'rack-acceptable/charsets'
-    autoload :Languages       , 'rack-acceptable/languages'
     autoload :MIMETypes       , 'rack-acceptable/mimetypes'
     autoload :LanguageTag     , 'rack-acceptable/language_tag'
 
+    # request and mixins
+    autoload :Locales         , 'rack-acceptable/locales'
+    autoload :Headers         , 'rack-acceptable/headers'
+    autoload :Request         , 'rack-acceptable/request'
+
+    # middleware
     autoload :Formats         , 'rack-acceptable/middleware/formats'
     autoload :Provides        , 'rack-acceptable/middleware/provides'
-
-    autoload :Helpers         , 'rack-acceptable/helpers'
 
   end
 end

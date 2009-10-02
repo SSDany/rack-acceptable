@@ -1,10 +1,10 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Charsets, ".detect_best_charset" do
+describe Rack::Acceptable::Utils, ".detect_best_charset" do
 
   before :all do
     @helper = lambda do |provides, *accepts|
-      Rack::Acceptable::Charsets.detect_best_charset(provides, accepts)
+      Rack::Acceptable::Utils.detect_best_charset(provides, accepts)
     end
   end
 
