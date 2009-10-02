@@ -321,6 +321,10 @@ describe Rack::Acceptable::LanguageTag, "#has_variant?" do
     tag.should have_variant 'ROZAJ'
     tag.should have_variant 'biske'
     tag.should have_variant 'BISKE'
+
+    tag.variants = ['Rozaj']
+    tag.should have_variant 'rozaj'
+    tag.should have_variant 'ROZAJ'
   end
 
   it "returns false otherwise" do

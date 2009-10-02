@@ -66,10 +66,16 @@ module Rack #:nodoc:
 
         attr_accessor :canonize_grandfathered
 
+        # Checks if the +String+ passed could be treated as 'privateuse' Language-Tag.
+        # Works case-insensitively.
+        #
         def privateuse?(tag)
           PRIVATEUSE_REGEX === tag
         end
 
+        # Checks if the +String+ passed represents a 'grandgathered' Language-Tag.
+        # Works case-insensitively.
+        #
         def grandfathered?(tag)
           GRANDFATHERED_TAGS.key?(tag) || GRANDFATHERED_TAGS.key?(tag.downcase)
         end
@@ -121,16 +127,30 @@ module Rack #:nodoc:
 
       end
 
+      # Checks if self has a variant passed.
+      # Works case-insensitively.
+      #
+      # ==== Notes
+      # *Destructively* downcases current set of variants, if necessary.
+      # Just note, that variants are case-insensitive, and 'convenient' form
+      # of the Languge-Tag assumes they're in 'lowercase' notation.
+      #
       def has_variant?(variant)
         return false unless @variants
-        @variants.include?(variant) || @variants.include?(variant.downcase)
+        @variants.include?(variant) || begin
+          @variants.map { |v| v.downcase! }
+          @variants.include?(variant.downcase)
+        end
       end
 
+      # Checks if self has a singleton passed.
+      # Works case-insensitively.
       def has_singleton?(key)
         return false unless @extensions
         @extensions.key?(key) || @extensions.key?(key.downcase)
       end
 
+      # Builds an ordered list of singletons.
       def singletons
         return nil unless @extensions
         keys = @extensions.keys
@@ -142,6 +162,9 @@ module Rack #:nodoc:
         @primary, @extlang, @script, @region, @variants, @extensions, @privateuse = *components
       end
 
+      # Builds the +String+, which represents self.
+      # Does *not* perform validation or recomposition.
+      #
       def compose
         @tag = [@primary]
         @tag << @extlang if @extlang
