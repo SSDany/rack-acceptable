@@ -223,7 +223,7 @@ module Rack #:nodoc:
       #
       def register(thing, *extensions)
         return if extensions.empty?
-        extensions.map! { |ext| ext[0] == ?. ? ext : ".#{ext}" }
+        extensions.map! { |ext| ext[0] == ?. ? ext.downcase : ".#{ext.downcase}" }
         extensions.each { |ext| REGISTRY[ext] = thing }
         EXTENSIONS[thing] = extensions.first
         nil
@@ -236,8 +236,7 @@ module Rack #:nodoc:
       end
 
       def lookup(ext, fallback = 'application/octet-stream')
-        ext = ".#{ext}" unless ext[0] == ?.
-        REGISTRY.fetch ext, fallback
+        REGISTRY.fetch(ext[0] == ?. ? ext.downcase : ".#{ext.downcase}", fallback)
       end
 
       def extension_for(thing, fallback = nil)

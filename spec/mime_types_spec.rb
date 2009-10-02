@@ -135,11 +135,16 @@ describe Rack::Acceptable::MIMETypes, "registry" do
 
   it "provides a way to register the MIME-Type (and associated extensions)" do
     Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
-    Rack::Acceptable::MIMETypes::REGISTRY.should == {'.foo' => 'text/foo', '.whatever' => 'text/foo'}
-    Rack::Acceptable::MIMETypes::EXTENSIONS.should == {'text/foo' => '.foo'}
+    Rack::Acceptable::MIMETypes::REGISTRY['.foo'].should == 'text/foo'
+    Rack::Acceptable::MIMETypes::REGISTRY['.whatever'].should == 'text/foo'
+    Rack::Acceptable::MIMETypes::EXTENSIONS['text/foo'].should == '.foo'
+
+    Rack::Acceptable::MIMETypes.register('text/bar', '.BAR')
+    Rack::Acceptable::MIMETypes::REGISTRY['.bar'].should == 'text/bar'
+    Rack::Acceptable::MIMETypes::EXTENSIONS['text/bar'].should == '.bar'
   end
 
-  it "provides a way delete the MIME-Type (and associated extensions) from registry" do
+  it "provides a way to delete the MIME-Type (and associated extensions) from registry" do
     Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
     Rack::Acceptable::MIMETypes.delete('text/foo')
     Rack::Acceptable::MIMETypes::REGISTRY.should be_empty
@@ -149,6 +154,7 @@ describe Rack::Acceptable::MIMETypes, "registry" do
   it "provides a way to lookup the MIME-Type for the extension passed" do
     Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
     Rack::Acceptable::MIMETypes.lookup('.foo').should == 'text/foo'
+    Rack::Acceptable::MIMETypes.lookup('.FOO').should == 'text/foo'
     Rack::Acceptable::MIMETypes.lookup('foo').should == 'text/foo'
     Rack::Acceptable::MIMETypes.lookup('bogus').should == 'application/octet-stream'
     Rack::Acceptable::MIMETypes.lookup('bogus', 'text/foo').should == 'text/foo'
