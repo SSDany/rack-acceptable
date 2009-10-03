@@ -45,11 +45,13 @@ RBench.run(TIMES) do
     HEADERS.each do |header|
 
       env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => header)
-      request = Rack::Acceptable::Request.new(env)
 
       report header.inspect do
         one { MIMEParse::best_match(PROVIDES, header) }
-        two { Rack::Acceptable::MIMETypes.detect_best_mime_type(PROVIDES, request.acceptable_media) }
+        two do
+          accepts = Rack::Acceptable::Request.new(env).acceptable_media
+          Rack::Acceptable::MIMETypes.detect_best_mime_type(PROVIDES, accepts)
+        end
       end
 
     end
