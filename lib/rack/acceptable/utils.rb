@@ -1,6 +1,6 @@
 # encoding: binary
 
-require 'rack-acceptable/const'
+require 'rack/acceptable/const'
 
 module Rack #:nodoc:
   module Acceptable #:nodoc:

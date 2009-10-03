@@ -16,7 +16,9 @@ begin
   require SHARED_EXAMPLES_ROOT + 'http_accept_encoding_parser'
   require SHARED_EXAMPLES_ROOT + 'http_accept_parser'
 
-  require SPEC_ROOT.parent + 'lib/rack-acceptable'
+  dir = SPEC_ROOT.parent.join('lib').to_s
+  $:.unshift(dir) unless $:.include?(dir)
+  require 'rack/acceptable'
 
 rescue LoadError
 end

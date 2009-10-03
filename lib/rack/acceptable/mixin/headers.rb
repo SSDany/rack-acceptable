@@ -1,4 +1,4 @@
-require 'rack-acceptable/utils'
+require 'rack/acceptable/utils'
 
 module Rack #:nodoc:
   module Acceptable #:nodoc:

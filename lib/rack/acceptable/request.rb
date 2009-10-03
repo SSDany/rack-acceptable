@@ -1,5 +1,5 @@
-require 'rack-acceptable/mixin/headers'
-require 'rack-acceptable/mixin/media'
+require 'rack/acceptable/mixin/headers'
+require 'rack/acceptable/mixin/media'
 
 module Rack #:nodoc:
   module Acceptable #:nodoc:
