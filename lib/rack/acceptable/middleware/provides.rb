@@ -71,12 +71,14 @@ module Rack #:nodoc:
       #
       def _negotiate(request)
         header = request.env[Const::ENV_HTTP_ACCEPT]
-        if @lookup.key?(request.env[Const::ENV_HTTP_ACCEPT])
+        if @lookup.key?(header)
           @lookup[header]
         else
           accepts = request.acceptable_mime_types
           @lookup[header] = accepts.empty? ? @provides.first : MIMETypes.detect_best_mime_type(@provides, accepts)
         end
+      rescue
+        @lookup[header] = nil # The Accept request-header is malformed.
       end
 
     end

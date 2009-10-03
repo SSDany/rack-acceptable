@@ -74,6 +74,7 @@ describe Rack::Acceptable::Provides do
         @response.should be_ok
         @response.body.should == 'text/plain'
 
+        Rack::Acceptable::MIMETypes.should_not_receive(:parse_mime_type)
         Rack::Acceptable::MIMETypes.should_not_receive(:detect_best_mime_type)
 
         request!('HTTP_ACCEPT' => header)
@@ -98,9 +99,35 @@ describe Rack::Acceptable::Provides do
         @response.status.should == 406
         @response.body.should match %r{could not be found}
 
+        Rack::Acceptable::MIMETypes.should_not_receive(:parse_mime_type)
         Rack::Acceptable::MIMETypes.should_not_receive(:detect_best_mime_type)
 
         request!('HTTP_ACCEPT' => 'video/quicktime')
+        @response.should_not be_ok
+        @response.status.should == 406
+        @response.body.should match %r{could not be found}
+      end
+
+    end
+
+    describe "or the Accept header is malformed" do
+
+      it "returns 406 'Not Acceptable'" do
+        request!('HTTP_ACCEPT' => 'bogus!')
+        @response.should_not be_ok
+        @response.status.should == 406
+        @response.body.should match %r{could not be found}
+      end
+
+      it "memoizes results" do
+        request!('HTTP_ACCEPT' => 'bogus!')
+        @response.should_not be_ok
+        @response.status.should == 406
+        @response.body.should match %r{could not be found}
+
+        Rack::Acceptable::MIMETypes.should_not_receive(:parse_mime_type)
+
+        request!('HTTP_ACCEPT' => 'bogus!')
         @response.should_not be_ok
         @response.status.should == 406
         @response.body.should match %r{could not be found}
