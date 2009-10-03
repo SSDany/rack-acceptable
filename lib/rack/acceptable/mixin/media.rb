@@ -18,8 +18,8 @@ module Rack #:nodoc:
       #
       def acceptable_media
         @_acceptable_media ||= begin
-          header = env[Const::ENV_HTTP_ACCEPT].to_s.strip
-          header.split(Utils::COMMA_WS_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
+          header = env[Const::ENV_HTTP_ACCEPT].to_s
+          header.split(Utils::COMMA_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
         end
       end
 
