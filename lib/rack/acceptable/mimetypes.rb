@@ -255,8 +255,8 @@ module Rack #:nodoc:
       def load_from(file)
         open(file) do |io|
           io.each do |line|
-            next if /^#/ === line
             line.strip!
+            next if line.empty? || /^#/ === line
             register *line.split(/\s+/)
           end
         end

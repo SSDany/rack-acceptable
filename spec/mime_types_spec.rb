@@ -123,47 +123,67 @@ end
 
 describe Rack::Acceptable::MIMETypes, "registry" do
 
-  before :each do
-    Rack::Acceptable::MIMETypes::REGISTRY.clear
-    Rack::Acceptable::MIMETypes::EXTENSIONS.clear
+  before :all do
+    @registry = Rack::Acceptable::MIMETypes
+    @registry::REGISTRY.clear
+    @registry::EXTENSIONS.clear
   end
 
-  after :all do
-    Rack::Acceptable::MIMETypes::REGISTRY.clear
-    Rack::Acceptable::MIMETypes::EXTENSIONS.clear
+  after :each do
+    @registry::REGISTRY.clear
+    @registry::EXTENSIONS.clear
   end
 
   it "provides a way to register the MIME-Type (and associated extensions)" do
-    Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
-    Rack::Acceptable::MIMETypes::REGISTRY['.foo'].should == 'text/foo'
-    Rack::Acceptable::MIMETypes::REGISTRY['.whatever'].should == 'text/foo'
-    Rack::Acceptable::MIMETypes::EXTENSIONS['text/foo'].should == '.foo'
+    @registry.register('text/foo', '.foo', '.whatever')
+    @registry::REGISTRY['.foo'].should == 'text/foo'
+    @registry::REGISTRY['.whatever'].should == 'text/foo'
+    @registry::EXTENSIONS['text/foo'].should == '.foo'
 
-    Rack::Acceptable::MIMETypes.register('text/bar', '.BAR')
-    Rack::Acceptable::MIMETypes::REGISTRY['.bar'].should == 'text/bar'
-    Rack::Acceptable::MIMETypes::EXTENSIONS['text/bar'].should == '.bar'
+    @registry.register('text/foo', '.another')
+    @registry::REGISTRY['.foo'].should == 'text/foo'
+    @registry::EXTENSIONS['text/foo'].should == '.another'
+
+    @registry.register('text/bar', '.BAR')
+    @registry::REGISTRY['.bar'].should == 'text/bar'
+    @registry::EXTENSIONS['text/bar'].should == '.bar'
   end
 
   it "provides a way to delete the MIME-Type (and associated extensions) from registry" do
-    Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
-    Rack::Acceptable::MIMETypes.delete('text/foo')
-    Rack::Acceptable::MIMETypes::REGISTRY.should be_empty
-    Rack::Acceptable::MIMETypes::EXTENSIONS.should be_empty
+    @registry.register('text/foo', '.foo', '.whatever')
+    @registry.delete('text/foo')
+    @registry::REGISTRY.should be_empty
+    @registry::EXTENSIONS.should be_empty
   end
 
   it "provides a way to lookup the MIME-Type for the extension passed" do
-    Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
-    Rack::Acceptable::MIMETypes.lookup('.foo').should == 'text/foo'
-    Rack::Acceptable::MIMETypes.lookup('.FOO').should == 'text/foo'
-    Rack::Acceptable::MIMETypes.lookup('foo').should == 'text/foo'
-    Rack::Acceptable::MIMETypes.lookup('bogus').should == 'application/octet-stream'
-    Rack::Acceptable::MIMETypes.lookup('bogus', 'text/foo').should == 'text/foo'
+    @registry.register('text/foo', '.foo', '.whatever')
+    @registry.lookup('.foo').should == 'text/foo'
+    @registry.lookup('.FOO').should == 'text/foo'
+    @registry.lookup('foo').should == 'text/foo'
+    @registry.lookup('bogus').should == 'application/octet-stream'
+    @registry.lookup('bogus', 'text/foo').should == 'text/foo'
   end
 
   it "provides a way to lookup the preferred extension for the MIME-Type passed" do
-    Rack::Acceptable::MIMETypes.register('text/foo', '.foo', '.whatever')
-    Rack::Acceptable::MIMETypes.extension_for('text/foo').should == '.foo'
-    Rack::Acceptable::MIMETypes.extension_for('bogus', '.foo').should == '.foo'
+    @registry.register('text/foo', '.foo', '.whatever')
+    @registry.extension_for('text/foo').should == '.foo'
+    @registry.extension_for('bogus', '.foo').should == '.foo'
+  end
+
+  it "provides a way to load MIME-Types" do
+    mime_types = Tempfile.open('mime.types')
+    mime_types.write "text/foo .foo .whatever\n"
+    mime_types.write "#text/bar .bar\n"
+    mime_types.close
+
+    @registry.load_from(mime_types.path)
+    @registry::REGISTRY['.foo'].should == 'text/foo'
+    @registry::REGISTRY['.whatever'].should == 'text/foo'
+    @registry::REGISTRY['.bar'].should == nil
+    @registry::EXTENSIONS['text/foo'].should == '.foo'
+    @registry::EXTENSIONS['text/bar'].should == nil
+    mime_types.unlink
   end
 
 end
