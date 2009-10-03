@@ -74,7 +74,7 @@ module Rack #:nodoc:
         if @lookup.key?(header)
           @lookup[header]
         else
-          accepts = request.acceptable_mime_types
+          accepts = request.acceptable_media
           @lookup[header] = accepts.empty? ? @provides.first : MIMETypes.detect_best_mime_type(@provides, accepts)
         end
       rescue

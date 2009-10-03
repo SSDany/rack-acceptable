@@ -16,23 +16,23 @@ module Rack #:nodoc:
       #   pattern (type or subtype is invalid, or there's something like "*/foo")
       #   or, at last, one of MIME-Types has malformed qvalue.
       #
-      def acceptable_mime_types
-        @_acceptable_mime_types ||= begin
+      def acceptable_media
+        @_acceptable_media ||= begin
           header = env[Const::ENV_HTTP_ACCEPT].to_s.strip
           header.split(Utils::COMMA_WS_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
         end
       end
 
       # Checks if the MIME-Type passed acceptable.
-      def accept_mime_type?(thing)
-        qvalue = MIMETypes.qualify_mime_type(thing, acceptable_mime_types)
+      def accept_media?(thing)
+        qvalue = MIMETypes.qualify_mime_type(thing, acceptable_media)
         qvalue > 0
       rescue
         false
       end
 
-      def preferred_mime_type_from(*things)
-        MIMETypes.detect_best_mime_type(things, acceptable_mime_types)
+      def preferred_media_from(*things)
+        MIMETypes.detect_best_mime_type(things, acceptable_media)
       end
 
     end
