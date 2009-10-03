@@ -31,6 +31,10 @@ module Rack #:nodoc:
         false
       end
 
+      def preferred_mime_type_from(*things)
+        MIMETypes.detect_best_mime_type(things, acceptable_mime_types)
+      end
+
     end
   end
 end
