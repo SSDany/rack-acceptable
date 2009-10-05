@@ -31,9 +31,11 @@ module Rack #:nodoc:
         false
       end
 
-      def preferred_media_from(*things)
+      def negotiate_media(*things)
         MIMETypes.detect_best_mime_type(things, acceptable_media)
       end
+
+      alias :preferred_media_from :negotiate_media
 
     end
   end

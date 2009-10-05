@@ -51,7 +51,7 @@ module Rack #:nodoc:
       end
 
       # Returns the best one of locales passed or +nil+.
-      def preferred_locale_from(*provides)
+      def negotiate_locale(*provides)
         candidates = preferred_locales & (provides << Const::WILDCARD)
         if (candidate = candidates.first) == Const::WILDCARD
           (provides - preferred_locales - @_undesirable_locales).first || candidates.at(1)
@@ -59,6 +59,8 @@ module Rack #:nodoc:
           candidate
         end
       end
+
+      alias :preferred_locale_from :negotiate_locale
 
       # Checks if locale passed acceptable.
       def accept_locale?(locale)
