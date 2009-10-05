@@ -120,7 +120,7 @@ module Rack #:nodoc:
 
       # ==== Parameters
       # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
-      # types<Array>:: The Array of *parsed* MIME-Types to check against. MUST be *ordered* (by qvalue).
+      # types<Array>:: The Array of *parsed* MIME-Types to check against.
       #
       # ==== Returns
       # Float:: The quality factor (relative strength of the MIME-Type).
@@ -131,7 +131,7 @@ module Rack #:nodoc:
 
       # ==== Parameters
       # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
-      # types<Array>:: The Array of *parsed* MIME-Types to check against. MUST be *ordered* (by qvalue).
+      # types<Array>:: The Array of *parsed* MIME-Types to check against.
       #
       # ==== Returns
       # Array[Float, Integer, Integer, Integer]::
@@ -177,7 +177,7 @@ module Rack #:nodoc:
 
           p.each { |k,v| params.key?(k) && params[k] == v ? sp += 1 : (divergence = true; break) }
 
-          next if divergence || (r == rate && sp <= specificity)
+          next if divergence || (r == rate && (sp < specificity || sp == specificity && quality > q))
           specificity = sp
           rate = r
           quality = q
@@ -207,8 +207,8 @@ module Rack #:nodoc:
         return nil if provides.empty?
         return provides.first if accepts.empty?
 
-        i = 0
-        accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
+        #i = 0
+        #accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
         candidate = provides.map { |t| MIMETypes.weigh_mime_type(t,accepts) << t }.max_by { |t| t[0..3] } #instead of #sort
         candidate.at(0) == 0 ? nil : candidate.last
       end
