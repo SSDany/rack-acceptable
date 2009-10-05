@@ -25,7 +25,9 @@ describe Rack::Acceptable::MIMETypes, ".detect_best_mime_type" do
     helper["application/xbel+xml; q=0, application/xml; q=0.3"    ].should == 'application/xml'
     helper["application/xbel+xml; q=0.5, application/xml; q=0.3"  ].should == 'application/xbel+xml' # quality wins
     helper["application/xbel+xml; q=0.3, application/xml; q=0.5"  ].should == 'application/xml' # quality wins
+    helper["application/xml; q=0.5, application/xbel+xml; q=0.3"  ].should == 'application/xml' # quality wins
     helper["application/xbel+xml; q=0.3, application/*; q=0.5"    ].should == 'application/xml' # quality wins
+    helper["application/*; q=0.5, application/xbel+xml; q=0.3"    ].should == 'application/xml' # quality wins
     helper["application/xbel+xml; q=0.3, */*; q=0.5"              ].should == 'application/xml' # quality wins
     helper["application/xml, */*"                                 ].should == 'application/xml' # specificity wins
     helper["application/xml, application/*"                       ].should == 'application/xml' # specificity wins
