@@ -152,6 +152,8 @@ module Rack #:nodoc:
         @extensions.key?(key) || @extensions.key?(key.downcase)
       end
 
+      alias :extension? :has_singleton?
+
       # Builds an ordered list of singletons.
       def singletons
         return nil unless @extensions
