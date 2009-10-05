@@ -105,7 +105,12 @@ module Rack #:nodoc:
         #
         def extract_language_info(langtag)
           tag = langtag.downcase
-          return nil if GRANDFATHERED_TAGS.key?(tag)
+
+          if GRANDFATHERED_TAGS.key?(tag)
+            return nil unless self.canonize_grandfathered && tag = GRANDFATHERED_TAGS[tag]
+            [tag,nil,nil,nil,nil]
+          end
+
           return nil unless LANGTAG_INFO_REGEX === tag
 
           primary     = $1

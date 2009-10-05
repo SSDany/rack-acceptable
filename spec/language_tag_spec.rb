@@ -102,6 +102,14 @@ describe Rack::Acceptable::LanguageTag, ".extract_language_info" do
     @parser = lambda { |tag| Rack::Acceptable::LanguageTag.extract_language_info(tag) }
   end
 
+  before :each do
+    Rack::Acceptable::LanguageTag.canonize_grandfathered = false
+  end
+
+  after :each do
+    Rack::Acceptable::LanguageTag.canonize_grandfathered = false
+  end
+
   it_should_behave_like "simple Language-Tag parser"
 
   it "returns nil when there's a 'privateuse' Language-Tag" do
@@ -109,13 +117,34 @@ describe Rack::Acceptable::LanguageTag, ".extract_language_info" do
     @parser[ 'x-private1-private2'  ].should == nil
   end
 
-  it "returns nil when there's a 'grandfathered' Language-Tag" do
-    @parser[ 'i-enochian'   ].should == nil
-    @parser[ 'i-klingon'    ].should == nil
-    @parser[ 'zh-min-nan'   ].should == nil
-    @parser[ 'zh-xiang'     ].should == nil
-    @parser[ 'cel-gaulish'  ].should == nil
-    @parser[ 'art-lojban'   ].should == nil
+  describe "when there's a 'grandfathered' Language-Tag" do
+
+    it "returns nil if :canonize_grandfathered option is off" do
+      @parser[ 'i-enochian'   ].should == nil
+      @parser[ 'cel-gaulish'  ].should == nil
+      @parser[ 'art-lojban'   ].should == nil
+      @parser[ 'i-klingon'    ].should == nil
+      @parser[ 'zh-min-nan'   ].should == nil
+      @parser[ 'zh-xiang'     ].should == nil
+    end
+
+    it "returns nil if :canonize_grandfathred option is on, but there's no a canonical form of the tag" do
+      @parser[ 'i-enochian'   ].should == nil
+      @parser[ 'cel-gaulish'  ].should == nil
+
+      Rack::Acceptable::LanguageTag.canonize_grandfathered = true
+      @parser[ 'i-enochian'   ].should == nil
+      @parser[ 'cel-gaulish'  ].should == nil
+    end
+
+    it "handles the tag if :canonize_grandfathered option is on and there's a canonical form of the tag" do
+      Rack::Acceptable::LanguageTag.canonize_grandfathered = true
+      @parser[ 'art-lojban'   ].should == ['jbo', nil, nil, nil, nil]
+      @parser[ 'i-klingon'    ].should == ['tlh', nil, nil, nil, nil]
+      @parser[ 'zh-min-nan'   ].should == ['nan', nil, nil, nil, nil]
+      @parser[ 'zh-xiang'     ].should == ['hsn', nil, nil, nil, nil]
+    end
+
   end
 
   it "returns nil when there's something malformed" do
