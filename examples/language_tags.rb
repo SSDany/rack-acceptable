@@ -2,7 +2,10 @@ require 'rubygems'
 require 'rack'
 require 'rack/acceptable'
 
-Rack::Acceptable::LanguageTag.extract_language_info('SL-LATN-ROZAJ') #=> ["sl",nil,"Latn",nil,["rozaj"]]
+p Rack::Acceptable::LanguageTag.extract_language_info('SL-LATN-ROZAJ') #=> ["sl",nil,"Latn",nil,["rozaj"]]
+p Rack::Acceptable::LanguageTag.extract_language_info('sl-Latn-IT-nedis') #=> ['sl', nil, 'Latn', 'IT', ['nedis']]
+p Rack::Acceptable::LanguageTag.extract_language_info('zh-Hans') #=> ["zh",nil,"Hans",nil,nil]
+
 langtag = Rack::Acceptable::LanguageTag.parse('SL-LATN-ROZAJ')
 p langtag.variants #=> ["rozaj"]
 p langtag.script #=> "Latn"
@@ -33,5 +36,10 @@ p langtag.has_variant?('rozaj') #=> false
 p langtag.has_variant?('nedis') #=> true
 p langtag.has_variant?('Nedis') #=> true
 p langtag.privateuse #=> ["whatever"]
+
+# validation
+p langtag.valid? #=> true
+langtag.variants = ['bogus!']
+p langtag.valid? #=> false
 
 # EOF
