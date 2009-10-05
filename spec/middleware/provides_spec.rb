@@ -4,14 +4,15 @@ describe Rack::Acceptable::Provides do
 
   def request!(*args)
     options = args.last.is_a?(::Hash) ? args.pop : {}
+    options.merge!(:lint => true)
     @response = Rack::MockRequest.new(@middleware).request('GET', args.first || "/", options)
   end
 
-  def app(key)
+  def app(key, headers = {})
     lambda do |env|
       body = env[key].to_s
       size = Rack::Utils::bytesize(body)
-      [200, {'Content-Type' => 'text/plain', 'Content-Length' => size.to_s}, [body]]
+      [200, headers.merge!('Content-Length' => size.to_s), [body]]
     end
   end
 
@@ -25,7 +26,7 @@ describe Rack::Acceptable::Provides do
 
   describe "when there's an Accept request-header" do
 
-    before :all do
+    before :each do
       @app = app('rack-acceptable.provides.candidate')
       @middleware = Rack::Acceptable::Provides.new(@app, @provides)
     end
@@ -33,6 +34,7 @@ describe Rack::Acceptable::Provides do
     describe "and some of available MIME-Types are also acceptable" do
 
       it "detects the best MIME-Type" do
+
         request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
         @response.should be_ok
         @response.body.should == 'application/json'
@@ -60,12 +62,30 @@ describe Rack::Acceptable::Provides do
         request!('HTTP_ACCEPT' => 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5')
         @response.should be_ok
         @response.body.should == 'text/xml'
-      end
 
-      it "ignores MIME-Types with zero qvalues" do
         request!("HTTP_ACCEPT" => "text/x-json;q=0,text/plain;q=0.3")
         @response.should be_ok
         @response.body.should == 'text/plain'
+      end
+
+      it "sets the Content-Type response-header, if necessary" do
+
+        @app = app('rack-acceptable.provides.candidate')
+        @middleware = Rack::Acceptable::Provides.new(@app, @provides)
+
+        request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
+        @response.should be_ok
+        @response.body.should == 'application/json'
+        @response['Content-Type'].should == 'application/json'
+
+        @app = app('rack-acceptable.provides.candidate', 'Content-Type' => 'text/plain')
+        @middleware = Rack::Acceptable::Provides.new(@app, @provides)
+
+        request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
+        @response.should be_ok
+        @response.body.should == 'application/json'
+        @response['Content-Type'].should == 'text/plain'
+
       end
 
       it "memoizes results" do

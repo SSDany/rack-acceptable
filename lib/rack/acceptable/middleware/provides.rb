@@ -1,3 +1,4 @@
+require 'rack/utils'
 require 'rack/acceptable/request'
 
 module Rack #:nodoc:
@@ -47,13 +48,17 @@ module Rack #:nodoc:
         simple = preferred.last
         request.env[CANDIDATE] = simple
         request.env[CANDIDATE_INFO] = preferred[0..3]
-        return @app.call(env) unless @force_format
 
-        path = request.path_info
-        if path != Const::SLASH && ext = _extension_for(simple)
+        if @force_format &&
+          (path = request.path_info) != Const::SLASH &&
+          ext = _extension_for(simple)
           request.path_info = path.sub(/\/*$/, ext)
         end
-        @app.call(env)
+
+        status, headers, body = @app.call(env)
+        headers = Rack::Utils::HeaderHash.new(headers)
+        headers[Const::CONTENT_TYPE] ||= simple
+        [status, headers.to_hash, body]
       end
 
       private
@@ -75,7 +80,8 @@ module Rack #:nodoc:
           @lookup[header]
         else
           accepts = request.acceptable_media
-          @lookup[header] = accepts.empty? ? @provides.first : MIMETypes.detect_best_mime_type(@provides, accepts)
+          @lookup[header] = accepts.empty? ? @provides.first :
+            MIMETypes.detect_best_mime_type(@provides, accepts)
         end
       rescue
         @lookup[header] = nil # The Accept request-header is malformed.

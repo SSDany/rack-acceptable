@@ -24,9 +24,8 @@ module Rack #:nodoc:
 
       NOT_ACCEPTABLE            = 'An appropriate representation of the requested resource could not be found.'.freeze
       NOT_ACCEPTABLE_RESPONSE   = [406, {
-        CONTENT_TYPE => TEXT_SLASH_PLAIN,
-        CONTENT_LENGTH => Rack::Utils.bytesize(NOT_ACCEPTABLE).to_s
-        }, [NOT_ACCEPTABLE]].freeze
+        CONTENT_TYPE => TEXT_SLASH_PLAIN, CONTENT_LENGTH => '75' },
+        [NOT_ACCEPTABLE]].freeze
 
     end
   end
