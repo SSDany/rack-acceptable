@@ -56,8 +56,10 @@ module Rack #:nodoc:
         end
 
         status, headers, body = @app.call(env)
-        headers = Rack::Utils::HeaderHash.new(headers)
-        headers[Const::CONTENT_TYPE] ||= simple
+        unless Rack::Utils::STATUS_WITH_NO_ENTITY_BODY.include?(status.to_i)
+          headers = Rack::Utils::HeaderHash.new(headers)
+          headers[Const::CONTENT_TYPE] ||= simple
+        end
         [status, headers.to_hash, body]
       end
 

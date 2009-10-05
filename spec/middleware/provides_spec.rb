@@ -4,16 +4,11 @@ describe Rack::Acceptable::Provides do
 
   def request!(*args)
     options = args.last.is_a?(::Hash) ? args.pop : {}
-    options.merge!(:lint => true)
     @response = Rack::MockRequest.new(@middleware).request('GET', args.first || "/", options)
   end
 
-  def app(key, headers = {})
-    lambda do |env|
-      body = env[key].to_s
-      size = Rack::Utils::bytesize(body)
-      [200, headers.merge!('Content-Length' => size.to_s), [body]]
-    end
+  def app(key, status = 200, headers = {})
+    lambda { |env| [status, headers, [env[key].to_s]] }
   end
 
   before :all do
@@ -78,13 +73,20 @@ describe Rack::Acceptable::Provides do
         @response.body.should == 'application/json'
         @response['Content-Type'].should == 'application/json'
 
-        @app = app('rack-acceptable.provides.candidate', 'Content-Type' => 'text/plain')
+        @app = app('rack-acceptable.provides.candidate', 200, 'Content-Type' => 'text/plain')
         @middleware = Rack::Acceptable::Provides.new(@app, @provides)
 
         request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
         @response.should be_ok
         @response.body.should == 'application/json'
         @response['Content-Type'].should == 'text/plain'
+
+        @app = app('rack-acceptable.provides.candidate', 204)
+        @middleware = Rack::Acceptable::Provides.new(@app, @provides)
+
+        request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
+        @response.status.should == 204
+        @response['Content-Type'].should == nil
 
       end
 
