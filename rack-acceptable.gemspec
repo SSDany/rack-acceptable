@@ -15,6 +15,7 @@ GEMSPEC = Gem::Specification.new do |s|
     'lib/rack/acceptable/language_tag.rb',
     'lib/rack/acceptable/middleware/formats.rb',
     'lib/rack/acceptable/middleware/provides.rb',
+    'lib/rack/acceptable/middleware/fake_accept.rb',
     'lib/rack/acceptable/mimetypes.rb',
     'lib/rack/acceptable/mixin/headers.rb',
     'lib/rack/acceptable/mixin/locales.rb',
