@@ -7,6 +7,9 @@ begin
   require 'spec'
 
   SPEC_ROOT = Pathname(__FILE__).dirname.expand_path
+
+  require SPEC_ROOT + 'lib' + 'fake_factory'
+
   SHARED_EXAMPLES_ROOT = SPEC_ROOT + 'shared'
 
   require SHARED_EXAMPLES_ROOT + 'qvalues_parser'

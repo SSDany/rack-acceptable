@@ -2,24 +2,15 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Formats do
 
-  def request!(options = {})
-    @response = Rack::MockRequest.new(@middleware).request('GET', '/', options)
-  end
+  include FakeFactory
 
   before :all do
-
-    app = lambda do |env|
-      body = env['rack-acceptable.formats.candidates'].to_yaml
-      size = Rack::Utils::bytesize(body)
-      [200, {'Content-Type' => 'text/plain', 'Content-Length' => size.to_s}, [body]]
-    end
-
+    app!('rack-acceptable.formats.candidates')
     @middleware = Rack::Acceptable::Formats.new(app,
       :json => %w(text/x-json application/json),
       :xml  => %w(application/xml text/xml),
       :text => %w(text/plain)
       )
-
   end
 
   describe "when there's an Accept request-header" do
@@ -27,33 +18,32 @@ describe Rack::Acceptable::Formats do
     it "detects acceptable formats" do
       request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
       @response.should be_ok
-      YAML.load(@response.body).should == [:json]
+      body.should == [[:json]]
 
       request!('HTTP_ACCEPT' => 'text/plain;q=0.5,application/json;q=0.5')
       @response.should be_ok
-      YAML.load(@response.body).should == [:text, :json]
+      body.should == [[:text, :json]]
 
       request!('HTTP_ACCEPT' => 'text/plain;q=0.3,application/json;q=0.5')
       @response.should be_ok
-      YAML.load(@response.body).should == [:json, :text]
+      body.should == [[:json, :text]]
 
       request!('HTTP_ACCEPT' => 'text/plain;q=0.3,application/json;q=0.5,text/xml;q=0.5')
       @response.should be_ok
-      YAML.load(@response.body).should == [:json, :xml, :text]
+      body.should == [[:json, :xml, :text]]
 
       request!('HTTP_ACCEPT' => 'text/plain;q=0.3,*/*')
       @response.should be_ok
-      YAML.load(@response.body).should == [:all, :text]
+      body.should == [[:all, :text]]
 
       request!('HTTP_ACCEPT' => 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5')
       @response.should be_ok
-      YAML.load(@response.body).should == [:xml, :text, :all]
-    end
+      body.should == [[:xml, :text, :all]]
 
-    it "ignores MIME-Types with zero qvalues" do
       request!("HTTP_ACCEPT" => "text/x-json;q=0,text/plain;q=0.3")
       @response.should be_ok
-      YAML.load(@response.body).should == [:text]
+      YAML.load(@response.body).should == [[:text]]
+
     end
 
     it "returns 406 'Not Acceptable' only when there's really nothing to provide" do
@@ -64,7 +54,7 @@ describe Rack::Acceptable::Formats do
 
       request!('HTTP_ACCEPT' => 'image/png;q=0.5,*/*;q=0.3')
       @response.should be_ok
-      YAML.load(@response.body).should == [:all]
+      YAML.load(@response.body).should == [[:all]]
     end
 
   end
@@ -74,7 +64,7 @@ describe Rack::Acceptable::Formats do
     it "assumes that everything is acceptable" do
       request!
       @response.should be_ok
-      YAML.load(@response.body).should == [:all]
+      body.should == [[:all]]
     end
 
   end
