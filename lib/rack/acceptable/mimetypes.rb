@@ -243,11 +243,16 @@ module Rack #:nodoc:
         EXTENSIONS.fetch thing, fallback
       end
 
+      def clear
+        EXTENSIONS.clear
+        REGISTRY.clear
+        nil
+      end
+
       # Resets the registry, i.e removes all and loads
       # the default set of the MIME-Types.
       def reset
-        EXTENSIONS.clear
-        REGISTRY.clear
+        clear
         load_from(REGISTRY_PATH)
       end
 
