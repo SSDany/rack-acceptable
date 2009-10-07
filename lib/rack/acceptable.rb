@@ -20,6 +20,7 @@ module Rack #:nodoc:
     # middleware
     autoload :Formats         , 'rack/acceptable/middleware/formats'
     autoload :Provides        , 'rack/acceptable/middleware/provides'
+    autoload :FakeAccept      , 'rack/acceptable/middleware/fake_accept'
 
   end
 end
