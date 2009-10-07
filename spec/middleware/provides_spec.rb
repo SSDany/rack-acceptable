@@ -2,7 +2,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Provides do
 
-  include FakeFactory
+  include SpecHelpers::FakeFactory
 
   before :all do
     @keys = %w(rack-acceptable.provides.candidate rack-acceptable.provides.candidate_info)

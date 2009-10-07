@@ -2,7 +2,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Formats do
 
-  include FakeFactory
+  include SpecHelpers::FakeFactory
 
   before :all do
     app!('rack-acceptable.formats.candidates')
