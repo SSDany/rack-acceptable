@@ -49,6 +49,16 @@ describe Rack::Acceptable::MIMETypes, ".detect_best_mime_type" do
     helper["text/html;level=2;q=0.5, text/html;level=1;q=0.5"     ].should == "text/html;level=2" # order (in header) wins
     helper["text/html;level=2;q=0.5, text/html;q=0.5"             ].should == "text/html;level=2" # specificity wins
 
+    @snippets = ["*/*"]
+    helper["application/json, text/html;q=0.9"                    ].should == "*/*"
+
+    @snippets = ["text/*"]
+    helper["application/json, text/html;q=0.9"                    ].should == "text/*"
+
+    @snippets = ["text/*", "*/*"]
+    helper["application/json, text/html;q=0.9"                    ].should == "*/*"
+    helper["application/json;q=0.9, text/html"                    ].should == "text/*"
+
   end
 
 end

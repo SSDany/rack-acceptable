@@ -119,6 +119,45 @@ describe Rack::Acceptable::MIMETypes, ".qualify_mime_type" do
 
   end
 
+  it "supports wildcards" do
+    @accepts =  ['text' , 'html'  , {'level' => '1'}, 1.0, {}],
+                ['text' , 'html'  , {}, 0.7, {}],
+                ['*'    , '*'     , {}, 0.5, {}],
+                ['text' , '*'     , {}, 0.3, {}]
+
+    qualify('text'  , 'html'  , {'level' => '1'} ).should == 1.0 # match: text/html;level=1
+    qualify('text'  , 'html'  , {}               ).should == 0.7 # match: text/html
+
+    # most sensible example:
+    # the best candidate for the 'text/*' pattern is a 'text/html;q=0.7'
+    # but for the 'text/plain' it's a 'text/*;q=0.3'
+    #
+    # i.e, the non-zero weight of the 'text/*' pattern
+    # should be treated as: "at least one 'text' MIME-Type without
+    # parameters is acceptable"
+
+    qualify('text'  , '*'     , {}               ).should == 0.7 # match: text/html
+    qualify('text'  , 'plain' , {}               ).should == 0.3 # match: text/*
+
+    qualify('text'  , '*'     , {'level' => '1'} ).should == 1.0 # match: text/html;level=1
+    qualify('video' , '*'     , {}               ).should == 0.5 # match: */*
+    qualify('*'     , '*'     , {}               ).should == 0.7 # match: text/html
+    qualify('*'     , '*'     , {'level' => '1'} ).should == 1.0 # match: text/html;level=1
+
+    @accepts =  ['text' , 'html'  , {'level' => '1'}, 0.7, {}],
+                ['text' , 'html'  , {}, 0.5, {}],
+                ['*'    , '*'     , {}, 1.0, {}],
+                ['text' , '*'     , {}, 0.3, {}]
+
+    qualify('text'  , 'html'  , {'level' => '1'} ).should == 0.7 # match: text/html;level=1
+    qualify('text'  , 'html'  , {}               ).should == 0.5 # match: text/html
+    qualify('text'  , '*'     , {}               ).should == 0.5 # match: text/html
+    qualify('text'  , '*'     , {'level' => '1'} ).should == 0.7 # match: text/html;level=1
+    qualify('video' , '*'     , {}               ).should == 1.0 # match: */*
+    qualify('*'     , '*'     , {}               ).should == 1.0 # match: */*
+    qualify('*'     , '*'     , {'level' => '1'} ).should == 0.7 # match: text/html;level=1
+
+  end
 end
 
 # EOF

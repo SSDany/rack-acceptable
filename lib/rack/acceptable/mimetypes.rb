@@ -156,9 +156,12 @@ module Rack #:nodoc:
         # determined by finding the media range with the highest precedence
         # which matches that type.
 
+        type_is_a_wildcard = type == Const::WILDCARD
+        subtype_is_a_wildcard = subtype == Const::WILDCARD
+
         types.each_with_index do |(t,s,p,q),i|
-          next unless ((tmatch = type == t) || t == Const::WILDCARD || type == Const::WILDCARD) &&
-                      ((smatch = subtype == s) || s == Const::WILDCARD || subtype == Const::WILDCARD)
+          next unless (type_is_a_wildcard     || t == type    || no_type_match    = t == Const::WILDCARD) &&
+                      (subtype_is_a_wildcard  || s == subtype || no_subtype_match = s == Const::WILDCARD)
 
           # we should skip when:
           # - divergence: 
@@ -168,20 +171,28 @@ module Rack #:nodoc:
           # - rate is lesser
           # - rates are equal, but sp(ecificity) is lesser or exactly the same
 
-          r  = tmatch ? 10 : 0
-          r += smatch ? 1  : 0
+          r  = no_type_match    ? 0 : 10
+          r += no_subtype_match ? 0 : 1
+
           next if r < rate
 
           sp = 0
-          divergence = false
+          p.each do |k,v|
+            if params.key?(k) && params[k] == v
+              sp += 1
+            else
+              sp = -1
+              break
+            end
+          end
 
-          p.each { |k,v| params.key?(k) && params[k] == v ? sp += 1 : (divergence = true; break) }
-
-          next if divergence || (r == rate && (sp < specificity || sp == specificity && quality > q))
-          specificity = sp
-          rate = r
-          quality = q
-          index = -i
+          #next if sp == -1 || (r == rate && (sp < specificity || sp == specificity && quality > q))
+          if sp > -1 && (r > rate || (sp > specificity || sp == specificity && quality < q))
+            specificity = sp
+            rate = r
+            quality = q
+            index = -i
+          end
         end
 
         [quality, rate, specificity, index]
