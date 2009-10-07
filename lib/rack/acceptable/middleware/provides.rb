@@ -47,7 +47,7 @@ module Rack #:nodoc:
 
         simple = preferred.last
         request.env[CANDIDATE] = simple
-        request.env[CANDIDATE_INFO] = preferred[0..3]
+        request.env[CANDIDATE_INFO] = preferred[0..2]
 
         if @force_format &&
           (path = request.path_info) != Const::SLASH &&
