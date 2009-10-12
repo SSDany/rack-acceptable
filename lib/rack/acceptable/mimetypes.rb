@@ -254,6 +254,7 @@ module Rack #:nodoc:
         EXTENSIONS.fetch thing, fallback
       end
 
+      # Empties the registry.
       def clear
         EXTENSIONS.clear
         REGISTRY.clear
@@ -267,7 +268,8 @@ module Rack #:nodoc:
         load_from(REGISTRY_PATH)
       end
 
-      # Loads the set of MIME-Types from the apache-compatible file.
+      # Loads the set of MIME-Types from the Apache compatible mime.types file.
+      # original source: webrick.
       def load_from(file)
         open(file) do |io|
           io.each do |line|
