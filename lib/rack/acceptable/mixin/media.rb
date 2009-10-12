@@ -25,10 +25,21 @@ module Rack #:nodoc:
 
       # Checks if the MIME-Type passed acceptable.
       def accept_media?(thing)
-        qvalue = MIMETypes.qualify_mime_type(thing, acceptable_media)
+        qvalue = MIMETypes.weigh_mime_type(thing, acceptable_media).first
         qvalue > 0
       rescue
         false
+      end
+
+      # Returns the best match for the MIME-Type or
+      # pattern (like "text/*" etc) passed or +nil+.
+      def best_media_for(thing)
+        weight = MIMETypes.weigh_mime_type(thing, acceptable_media)
+        if weight.first > 0
+          acceptable_media.at(-weight.last)
+        else
+          nil
+        end
       end
 
       def negotiate_media(*things)
