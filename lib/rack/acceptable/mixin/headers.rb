@@ -53,11 +53,11 @@ module Rack #:nodoc:
       #   pattern, one of quality factors is malformed etc.
       #
       # ==== Notes
-      # * It uses {Basic Language-Range pattern}[http://tools.ietf.org/html/rfc4647#section-2.1].
+      # * It uses {Extended Language-Range pattern}[http://tools.ietf.org/html/rfc4647#section-2.2].
       # * It does *not* perform 'convenient transformations' (downcasing of primary tags etc).
       #   In other words, it parses Accept-Language header in unpretentious manner.
       #
-      def acceptable_languages
+      def acceptable_language_ranges
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_LANGUAGE].to_s,
           Utils::HTTP_ACCEPT_LANGUAGE_REGEX)

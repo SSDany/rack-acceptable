@@ -221,8 +221,7 @@ module Rack #:nodoc:
       # use of digits anywhere in the 'language-range' (see [RFC2616errata]).
       #++
 
-      HTTP_ACCEPT_LANGUAGE_REGEX              = /^\s*(\*|[a-z]{1,8}(?:-[a-z\d]{1,8})*)#{Utils::QUALITY_PATTERN}\s*$/io.freeze
-      HTTP_ACCEPT_LANGUAGE_PRIMARY_TAGS_REGEX = /^\s*(\*|[a-z]{1,8})(?:-[a-z\d]{1,8})*#{Utils::QUALITY_PATTERN}\s*$/o.freeze
+      HTTP_ACCEPT_LANGUAGE_REGEX = /^\s*(\*|[a-z]{1,8}(?:-[a-z\d]{1,8}|-\*)*)#{Utils::QUALITY_PATTERN}\s*$/io.freeze
 
       def normalize_header(header)
         ret = header.strip

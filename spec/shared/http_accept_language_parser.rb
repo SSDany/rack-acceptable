@@ -11,6 +11,9 @@ shared_examples_for "simple HTTP_ACCEPT_LANGUAGE parser" do
     qvalues = @parser['en-gb;q=1.0, en-us;q=0.5, *;q=0.3']
     qvalues.should == [['en-gb', 1.0], ['en-us', 0.5], ['*', 0.3]]
 
+    qvalues = @parser['en-*;q=1.0, de-*-DE;q=0.5, *;q=0.3']
+    qvalues.should == [['en-*', 1.0], ['de-*-DE', 0.5], ['*', 0.3]]
+
   end
 
 end

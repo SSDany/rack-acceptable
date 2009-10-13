@@ -23,10 +23,10 @@ describe Rack::Acceptable::Headers do
     lambda { request.acceptable_charsets }.should_not raise_error
   end
 
-  it "provides the #acceptable_languages method" do
+  it "provides the #acceptable_language_ranges method" do
     request = fake_request('HTTP_ACCEPT_LANGUAGE' => 'de,it,da,ru,zh-Hans')
-    request.should respond_to :acceptable_languages
-    lambda { request.acceptable_languages }.should_not raise_error
+    request.should respond_to :acceptable_language_ranges
+    lambda { request.acceptable_language_ranges }.should_not raise_error
   end
 
   it "provides the #acceptable_media_ranges method" do
@@ -113,11 +113,11 @@ describe Rack::Acceptable::Headers do
 
   end
 
-  describe "#acceptable_languages" do
+  describe "#acceptable_language_ranges" do
 
     before :all do
-      @parser = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_languages }
-      @qvalue = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_languages.first.last }
+      @parser = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_language_ranges }
+      @qvalue = lambda { |thing| fake_request('HTTP_ACCEPT_LANGUAGE' => thing).acceptable_language_ranges.first.last }
       @sample = 'en-gb'
       @message = %r{Malformed Accept-Language header}
     end
@@ -127,19 +127,19 @@ describe Rack::Acceptable::Headers do
       it_should_behave_like 'simple qvalues parser'
 
       it "raises an ArgumentError when there's a malformed Language-Range" do
-        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "veryverylongstring").acceptable_languages }.
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "veryverylongstring").acceptable_language_ranges }.
         should raise_error ArgumentError, @message
 
-        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "en-gb-veryverylongstring").acceptable_languages }.
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "en-gb-veryverylongstring").acceptable_language_ranges }.
         should raise_error ArgumentError, @message
 
-        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "non_alpha").acceptable_languages }.
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "non_alpha").acceptable_language_ranges }.
         should raise_error ArgumentError, @message
 
-        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "header=malformed;q=0.3").acceptable_languages }.
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "header=malformed;q=0.3").acceptable_language_ranges }.
         should raise_error ArgumentError, @message
 
-        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "q=0.3").acceptable_languages }.
+        lambda { fake_request('HTTP_ACCEPT_LANGUAGE' => "q=0.3").acceptable_language_ranges }.
         should raise_error ArgumentError, @message
       end
 
