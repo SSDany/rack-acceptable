@@ -11,11 +11,17 @@ p langtag.variants #=> ["rozaj"]
 p langtag.script #=> "Latn"
 
 # basic filtering (RFC 4647)
-p langtag.matches?('sl-Latn-rozaj-x-sl') #=> true
-p langtag.matches?('sl-Latn-nedis') #=> false
 p langtag.has_prefix?('sl-Latn') #=> true
+p langtag.matched_by_basic_range?('sl-Latn') #=> true
 p langtag.has_prefix?('sl-Latn-ro') #=> false
 p langtag.has_prefix?('sl') #=> true
+
+# extended filtering (RFC 4647)
+p langtag.matched_by_extended_range?('*') #=> true
+p langtag.matched_by_extended_range?('sl-*') #=> true
+p langtag.matched_by_extended_range?('*-Latn') #=> true
+p langtag.matched_by_extended_range?('sl-rozaj') #=> true
+p langtag.matched_by_extended_range?('sl-nedis') #=> false
 
 # modification and recomposition
 p langtag.nicecased #=> "sl-Latn-rozaj"

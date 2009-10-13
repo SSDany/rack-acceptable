@@ -192,6 +192,34 @@ module Rack #:nodoc:
         @nicecased  #.dup #uuuuugh
       end
 
+      # Checks if the *extended* Language-Range passed matches self.
+      def matched_by_extended_range?(range)
+        recompose
+        subtags = @composition.split(Const::HYPHEN)
+        subranges = range.downcase.split(Const::HYPHEN)
+
+        subrange = subranges.shift
+        subtag = subtags.shift
+
+        while subrange
+          if subrange == Const::WILDCARD
+            subrange = subranges.shift
+          elsif subtag == nil
+            return false
+          elsif subtag == subrange
+            subtag = subtags.shift
+            subrange = subranges.shift
+          elsif subtag.size == 1
+            return false
+          else
+            subtag = subtags.shift
+          end
+        end
+        true
+      rescue
+        false
+      end
+
       #--
       # RFC 4647, sec. 3.3.1 ('Basic Filtering')
       #
@@ -206,46 +234,23 @@ module Rack #:nodoc:
       # script, as used in Germany).
       #++
 
-      # Checks if self matches the Language-Tag passed.
-      #
-      # ==== Example
-      #   tag = LanguageTag.parse('de-de')
-      #   tag.matches?('de-DE-1996') #=> true
-      #   tag.matches?('de-Latn-DE') #=> false
-      #   tag.matches?('*') #=> true (by default)
-      #
-      def matches?(other)
-        if other.kind_of?(self.class)
-          recompose
-          s = other.recompose.tag
-        elsif other.respond_to?(:to_str)
-          recompose
-          s = other.to_str
-          return true if s == Const::WILDCARD
-          s = self.class.parse(s).tag
-        else
-          return false
-        end
-        @tag == s || s.index(@tag + Const::HYPHEN) == 0
-      rescue
-        false
-      end
-
-      # Checks if the Language-Tag passed matches self.
+      # Checks if the *basic* Language-Range passed matches self.
       #
       # ==== Example
       #   tag = LanguageTag.parse('de-Latn-DE')
-      #   tag.has_prefix?('de-Latn-DE') #=> true
-      #   tag.has_prefix?('de-Latn') #=> true
-      #   tag.has_prefix?('de-La') #=> false
-      #   tag.has_prefix?('de-de') #=> false
-      #   tag.has_prefix?('malformedlangtag') #=> false
+      #   tag.matched_by_basic_range?('de-Latn-DE') #=> true
+      #   tag.matched_by_basic_range?('de-Latn') #=> true
+      #   tag.matched_by_basic_range?('*') #=> true
+      #   tag.matched_by_basic_range?('de-La') #=> false
+      #   tag.matched_by_basic_range?('de-de') #=> false
+      #   tag.matched_by_basic_range?('malformedlangtag') #=> false
       #
-      def has_prefix?(other)
-        if other.kind_of?(self.class)
-          s = other.recompose.tag
-        elsif other.respond_to?(:to_str)
-          s = self.class.parse(other).tag
+      def matched_by_basic_range?(range)
+        if range.kind_of?(self.class)
+          s = range.recompose.tag
+        elsif range.respond_to?(:to_str)
+          return true if range.to_str == Const::WILDCARD
+          s = self.class.parse(range).tag
         else
           return false
         end
@@ -254,6 +259,8 @@ module Rack #:nodoc:
       rescue
         false
       end
+
+      alias :has_prefix? :matched_by_basic_range?
 
       def ==(other)
         return false unless other.kind_of?(self.class)

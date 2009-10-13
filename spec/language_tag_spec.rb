@@ -468,46 +468,6 @@ describe Rack::Acceptable::LanguageTag, "#valid?" do
 
 end
 
-describe Rack::Acceptable::LanguageTag, "#matches?" do
-
-  describe "when self is a valid Language-Tag" do
-
-    it "returns true, when the thing passed represents the valid Language-Tag and self matches it" do
-      tag = Rack::Acceptable::LanguageTag.parse('de-de')
-      tag.matches?('de-DE-1996').should == true
-      tag.matches?('de-DE-a-xxx-b-yyy-x-private').should == true
-
-      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-DE-1996')).should == true
-      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-DE-a-xxx-b-yyy-x-private')).should == true
-    end
-
-    it "returns true, when the thing passed is a wildcard" do
-      tag = Rack::Acceptable::LanguageTag.parse('de-de')
-      tag.matches?('*').should == true
-    end
-
-    it "returns false otherwise" do
-      tag = Rack::Acceptable::LanguageTag.parse('de-de')
-      tag.matches?('de-Latn-DE').should == false
-      tag.matches?('de-Deva').should == false
-      tag.matches?('bogus!').should == false
-      tag.matches?(42).should == false
-      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Deva')).should == false
-      tag.matches?(Rack::Acceptable::LanguageTag.parse('de-Latn-DE')).should == false
-      tag.matches?(Rack::Acceptable::LanguageTag.new('bogus!')).should == false
-    end
-
-  end
-
-  it "returns false, when self is not valid" do
-    tag = Rack::Acceptable::LanguageTag.new('bogus!')
-    tag.matches?('bogus!').should == false
-    tag.matches?('*').should == false
-    tag.matches?(Rack::Acceptable::LanguageTag.new('bogus!')).should == false
-  end
-
-end
-
 describe Rack::Acceptable::LanguageTag, "#has_prefix?" do
 
   describe "when self is a valid Language-Tag" do
@@ -536,6 +496,42 @@ describe Rack::Acceptable::LanguageTag, "#has_prefix?" do
     tag = Rack::Acceptable::LanguageTag.new('de', 'bogus!')
     tag.has_prefix?('de').should == false
     tag.has_prefix?(Rack::Acceptable::LanguageTag.new('de')).should == false
+  end
+
+end
+
+describe Rack::Acceptable::LanguageTag, "#matched_by_extended_range?" do
+
+  describe "when self is a valid Language-Tag" do
+
+    before :all do
+      @helper = lambda { |l,r| Rack::Acceptable::LanguageTag.parse(l).matched_by_extended_range?(r) }
+    end
+
+    it "returns true, when self matches the Language-Range passed" do
+      @helper[ 'de'             , 'de'      ].should == true
+      @helper[ 'de'             , '*'       ].should == true
+      @helper[ 'de-DE'          , 'de-DE'   ].should == true
+      @helper[ 'de-DE'          , 'de-de'   ].should == true
+      @helper[ 'de-DE'          , 'de-*-DE' ].should == true
+      @helper[ 'de-Latn-DE'     , 'de-DE'   ].should == true
+      @helper[ 'de-Latn-DE'     , 'de-*-DE' ].should == true
+      @helper[ 'de-DE-x-goethe' , 'de-DE'   ].should == true
+      @helper[ 'de-DE-x-goethe' , 'de-*-DE' ].should == true
+      @helper[ 'de-DE-x-goethe' , '*'       ].should == true
+    end
+
+    it "returns false otherwise" do
+      @helper[ 'de-x-DE'  , 'de-DE' ].should == false
+      @helper[ 'de'       , 'de-DE' ].should == false
+    end
+
+  end
+
+  it "returns false, when self is not valid" do
+    tag = Rack::Acceptable::LanguageTag.new('de', 'bogus!')
+    tag.matched_by_extended_range?('de-bogus!').should == false
+    tag.matched_by_extended_range?('de').should == false
   end
 
 end
