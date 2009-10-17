@@ -12,9 +12,9 @@ module Rack #:nodoc:
       # http://tools.ietf.org/html/rfc2616#section-3.9
       #++
 
-      QUALITY_PATTERN     = '\s*(?:;\s*q=(0|0\.\d{0,3}|1|1\.0{0,3}))?'.freeze
+      QUALITY_PATTERN     = '\s*(?:;\s*q=(0(?:\.\d{0,3})?|1(?:\.0{0,3})?))?'.freeze
+      QVALUE_REGEX        = /\A(?:0(?:\.\d{0,3})?|1(?:\.0{0,3})?)\z/.freeze
       QUALITY_REGEX       = /\s*;\s*q\s*=([^;\s]*)/i.freeze
-      QVALUE_REGEX        = /^0$|^0\.\d{0,3}$|^1$|^1\.0{0,3}$/.freeze
 
       QVALUE_DEFAULT      = 1.00
       QVALUE              = 'q'.freeze
