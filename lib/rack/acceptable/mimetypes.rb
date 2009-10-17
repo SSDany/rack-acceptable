@@ -217,11 +217,9 @@ module Rack #:nodoc:
       def detect_best_mime_type(provides, accepts)
         return nil if provides.empty?
         return provides.first if accepts.empty?
-
-        #i = 0
-        #accepts = accepts.sort_by { |t| [-t.at(3),i+=1] }
-        candidate = provides.map { |t| MIMETypes.weigh_mime_type(t,accepts) << t }.max_by { |t| t[0..3] } #instead of #sort
-        candidate.at(0) == 0 ? nil : candidate.last
+        i = 1
+        candidate = provides.map { |t| weigh_mime_type(t,accepts) << i-=1 }.max
+        candidate.at(0) == 0 ? nil : provides.at(-candidate.last)
       end
 
       REGISTRY_PATH = ::File.expand_path(::File.join(::File.dirname(__FILE__), 'data', 'mime.types')).freeze
