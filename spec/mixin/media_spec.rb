@@ -41,16 +41,16 @@ describe Rack::Acceptable::Media do
 
     it "returns the best match, if there's a compliant media in Accept request-header" do
       request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0.7, text/*;q=0.3')
-      request.best_media_for( 'text/plain'      ).should == ['text' , 'plain' , {}, 0.7, {}]
-      request.best_media_for( 'text/html'       ).should == ['text' , '*'     , {}, 0.3, {}]
-      request.best_media_for( 'text/*'          ).should == ['text' , 'plain' , {}, 0.7, {}]
-      request.best_media_for( '*/*'             ).should == ['text' , 'plain' , {}, 0.7, {}]
+      request.best_media_for( 'text/plain'      ).should == ['text' , 'plain' , {}, 0.7, nil]
+      request.best_media_for( 'text/html'       ).should == ['text' , '*'     , {}, 0.3, nil]
+      request.best_media_for( 'text/*'          ).should == ['text' , 'plain' , {}, 0.7, nil]
+      request.best_media_for( '*/*'             ).should == ['text' , 'plain' , {}, 0.7, nil]
 
       request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0.3, text/*;q=0.7')
-      request.best_media_for( 'text/plain'      ).should == ['text' , 'plain' , {}, 0.3, {}]
-      request.best_media_for( 'text/html'       ).should == ['text' , '*'     , {}, 0.7, {}]
-      request.best_media_for( 'text/*'          ).should == ['text' , '*'     , {}, 0.7, {}]
-      request.best_media_for( '*/*'             ).should == ['text' , '*'     , {}, 0.7, {}]
+      request.best_media_for( 'text/plain'      ).should == ['text' , 'plain' , {}, 0.3, nil]
+      request.best_media_for( 'text/html'       ).should == ['text' , '*'     , {}, 0.7, nil]
+      request.best_media_for( 'text/*'          ).should == ['text' , '*'     , {}, 0.7, nil]
+      request.best_media_for( '*/*'             ).should == ['text' , '*'     , {}, 0.7, nil]
     end
 
     it "returns nil, if there's no compliant media in Accept request-header" do

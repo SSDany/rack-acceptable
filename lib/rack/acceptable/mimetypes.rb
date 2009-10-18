@@ -62,7 +62,7 @@ module Rack #:nodoc:
       # ==== Returns
       # Array[String, String, Hash, Float, Hash]::
       #   Media-Range (type, subtype and parameter, as a +Hash+), quality factor
-      #   and accept-extension of the MIME-Type.
+      #   and accept-extension (as a +Hash+, if any, or +nil+) of the MIME-Type.
       #
       # ==== Raises
       # ArgumentError::
@@ -84,8 +84,8 @@ module Rack #:nodoc:
 
         qvalue = Utils::QVALUE_DEFAULT
         params = {}
-        accept_extension = {}
         has_qvalue = false
+        accept_extension = nil
 
         for pair in snippets
           pair.strip!
@@ -101,6 +101,7 @@ module Rack #:nodoc:
           # default value is q=1.
 
           if has_qvalue
+            accept_extension ||= {}
             accept_extension[k] = v || true # token [ "=" ( token | quoted-string ) ] - i.e, "v" is OPTIONAL.
           else
             k.downcase!

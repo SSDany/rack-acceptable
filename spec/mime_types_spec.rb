@@ -84,10 +84,10 @@ describe Rack::Acceptable::MIMETypes, ".parse_mime_type" do
 
   it_should_behave_like "media-range parser"
 
-  it "extracts accept-extension (as Hash)" do
+  it "extracts accept-extension (if any, as a Hash)" do
 
     parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333')
-    parsed[4].should == {}
+    parsed[4].should == nil
 
     parsed = Rack::Acceptable::MIMETypes.parse_mime_type('text/xml;a=42;q=0.333;a=557')
     parsed[4].should == {'a' => '557'}
