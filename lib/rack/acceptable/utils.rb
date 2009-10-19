@@ -87,7 +87,7 @@ module Rack #:nodoc:
 
       #:startdoc:
 
-      HTTP_ACCEPT_ENCODING_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})#{Utils::QUALITY_PATTERN}\s*$/o.freeze
+      HTTP_ACCEPT_TOKEN_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})#{Utils::QUALITY_PATTERN}\s*$/o.freeze
 
       module_function
 
@@ -99,15 +99,14 @@ module Rack #:nodoc:
       # The best one of available Content-Codings (as a +String+) or +nil+.
       #
       # ==== Notes
-      # Available and acceptable Content-Codings are supposed to be in same notations
-      # (downcased/upcased or whenever you want). According to section 3.5 of RFC 2616,
-      # Content-Codings are *case-insensitive*.
+      # Available and acceptable Content-Codings are supposed to be *downcased*
+      # According to section 3.5 of RFC 2616, Content-Codings are *case-insensitive*.
       #
       def detect_best_encoding(provides, accepts)
         return nil if provides.empty?
 
         identity = provides.include?(Const::IDENTITY) # presence of 'identity' in available content-codings
-        identity_or_wildcard_prohibited = nil # explicit 'identity;q=0' or '*;q=0'
+        identity_or_wildcard = true # absence of explicit 'identity;q=0' or '*;q=0'
 
         # RFC 2616, sec. 14.3:
         # If no Accept-Encoding field is present in a request, the server
@@ -133,28 +132,20 @@ module Rack #:nodoc:
         i = 0
 
         accepts.sort_by { |_,q| [-q,i+=1] }.each do |c,q|
-
           if q == 0
-            identity_or_wildcard_prohibited = true if c == Const::IDENTITY || c == Const::WILDCARD
-            next
-          end
-
-          if c == Const::WILDCARD
+            identity_or_wildcard = false if c == Const::IDENTITY || c == Const::WILDCARD
+          elsif c == Const::WILDCARD
             expansion ||= provides - accepts.map { |c| c.first }
             candidates.concat expansion
           else
             candidates << c
           end
-
         end
 
-        candidate = (candidates & provides).first
-        return candidate if candidate
-        return Const::IDENTITY if identity && !identity_or_wildcard_prohibited
+        (candidates & provides).first ||
+        (Const::IDENTITY if identity && identity_or_wildcard) ||
         nil
       end
-
-      HTTP_ACCEPT_CHARSET_REGEX = /^\s*(#{Utils::TOKEN_PATTERN})#{Utils::QUALITY_PATTERN}\s*$/o.freeze
 
       # ==== Parameters
       # provides<Array>:: The Array of available Charsets. Could be empty.
@@ -164,9 +155,8 @@ module Rack #:nodoc:
       # The best one of available Charsets (as a +String+) or +nil+.
       #
       # ==== Notes
-      # Available and acceptable Charsets are supposed to be in same notations
-      # (downcased/upcased or whenever you want). According to section 3.4 of
-      # RFC 2616, Charsets are *case-insensitive*.
+      # Available and acceptable Charsets are supposed to be *downcased*.
+      # According to section 3.4 of RFC 2616, Charsets are *case-insensitive*.
       #
       def detect_best_charset(provides, accepts)
         return nil if provides.empty?

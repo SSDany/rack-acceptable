@@ -17,7 +17,7 @@ module Rack #:nodoc:
       def acceptable_encodings
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_ENCODING].to_s.downcase,
-          Utils::HTTP_ACCEPT_ENCODING_REGEX)
+          Utils::HTTP_ACCEPT_TOKEN_REGEX)
       rescue
         raise ArgumentError,
         "Malformed Accept-Encoding header: #{env[Const::ENV_HTTP_ACCEPT_ENCODING].inspect}"
@@ -36,7 +36,7 @@ module Rack #:nodoc:
       def acceptable_charsets
         Utils.parse_header(
           env[Const::ENV_HTTP_ACCEPT_CHARSET].to_s.downcase,
-          Utils::HTTP_ACCEPT_CHARSET_REGEX)
+          Utils::HTTP_ACCEPT_TOKEN_REGEX)
       rescue
         raise ArgumentError,
         "Malformed Accept-Charset header: #{env[Const::ENV_HTTP_ACCEPT_CHARSET].inspect}"

@@ -192,11 +192,11 @@ module Rack #:nodoc:
             specificity = sp
             rate = r
             quality = q
-            index = -i
+            index = i
           end
         end
 
-        [quality, rate, specificity, index]
+        [quality, rate, specificity, -index]
       end
 
       # ==== Parameters
