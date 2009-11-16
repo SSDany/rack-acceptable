@@ -66,8 +66,6 @@ module Rack #:nodoc:
 
       class << self
 
-        attr_accessor :canonize_grandfathered
-
         # Checks if the +String+ passed could be treated as 'privateuse' Language-Tag.
         # Works case-insensitively.
         #
@@ -105,12 +103,7 @@ module Rack #:nodoc:
         #
         def extract_language_info(langtag)
           tag = langtag.downcase
-
-          if GRANDFATHERED_TAGS.key?(tag)
-            return nil unless self.canonize_grandfathered && tag = GRANDFATHERED_TAGS[tag]
-            [tag,nil,nil,nil,nil]
-          end
-
+          return nil if GRANDFATHERED_TAGS.key?(langtag)
           return nil unless LANGTAG_INFO_REGEX === tag
 
           primary     = $1
@@ -175,14 +168,8 @@ module Rack #:nodoc:
       # Does *not* perform validation or recomposition.
       #
       def compose
-        @tag = [@primary]
-        @tag << @extlang if @extlang
-        @tag << @script if @script
-        @tag << @region if @region
-        @tag.concat @variants if @variants
-        singletons.each { |s| (@tag << s).concat @extensions[s] } if @extensions
-        (@tag << PRIVATEUSE).concat @privateuse if @privateuse
-        @tag = @tag.join(Const::HYPHEN)
+        @tag = to_a.join(Const::HYPHEN)
+        @tag
       end
 
       attr_reader :tag # the most recent 'build' of tag
@@ -191,6 +178,45 @@ module Rack #:nodoc:
         recompose   # we could not conveniently format malformed or invalid tags
         @nicecased  #.dup #uuuuugh
       end
+
+      def to_a
+        ary = [@primary]
+        ary << @extlang if @extlang
+        ary << @script if @script
+        ary << @region if @region
+        ary.concat @variants if @variants
+        singletons.each { |s| (ary << s).concat @extensions[s] } if @extensions
+        (ary << PRIVATEUSE).concat @privateuse if @privateuse
+        ary
+      rescue
+        raise "LanguageTag has at least one malformed attribute: #{self.inspect}"
+      end
+
+      #--
+      # RFC 4647, sec. 3.3.2 ('Extended Filtering')
+      #
+      # Much like basic filtering, extended filtering selects content with
+      # arbitrarily long tags that share the same initial subtags as the
+      # language range.  In addition, extended filtering selects language
+      # tags that contain any intermediate subtags not specified in the
+      # language range.  For example, the extended language range "de-*-DE"
+      # (or its synonym "de-DE") matches all of the following tags:
+      #
+      #   de-DE (German, as used in Germany)
+      #   de-de (German, as used in Germany)
+      #   de-Latn-DE (Latin script)
+      #   de-Latf-DE (Fraktur variant of Latin script)
+      #   de-DE-x-goethe (private-use subtag)
+      #   de-Latn-DE-1996 (orthography of 1996)
+      #   de-Deva-DE (Devanagari script)
+      #
+      # The same range does not match any of the following tags for the
+      # reasons shown:
+      #
+      #   de (missing 'DE')
+      #   de-x-DE (singleton 'x' occurs before 'DE')
+      #   de-Deva ('Deva' not equal to 'DE')
+      #++
 
       # Checks if the *extended* Language-Range passed matches self.
       def matched_by_extended_range?(range)
@@ -288,7 +314,7 @@ module Rack #:nodoc:
       # check & dup of everything is not a good way (in this case).
       # So, you may create some tags, make them malformed/invalid,
       # and still be able to compare and modify them. Only note, that
-      # 'filtering' and 'lookup' is not validation-free.
+      # things like 'filtering' and 'lookup' are *not* validation-free.
       #
       def valid?
         !!recompose rescue false
@@ -305,36 +331,26 @@ module Rack #:nodoc:
       #
       # ==== Raises
       # ArgumentError::
-      #   The Language-Tag passed:
+      #   The Language-Tag composition:
       #   * does not conform the Language-Tag ABNF (malformed)
-      #   * grandfathered (when 'canonize_grandfathered' is off), or
-      #   * grandfathered without canonical form (when 'canonize_grandfathered' is on)
+      #   * grandfathered
       #   * starts with 'x' singleton ('privateuse').
       #   * contains duplicate variants
       #   * contains duplicate singletons
       #
       def recompose(thing = nil)
 
-        tag = if thing
+        tag = nil
+        compose
+
+        if thing
           raise TypeError, "Can't convert #{thing.class} into String" unless thing.respond_to?(:to_str)
-          thing.to_str
+          return self if @tag == (tag = thing.to_str) || @tag.downcase == (tag = tag.downcase)
         else
-          compose
+          return self if @nicecased == (tag = @tag) || @composition == tag || @composition == (tag = tag.downcase)
         end
 
-        # in most cases Language-Tags are already formatted.
-        return self if @nicecased == tag || @composition == tag || @composition == (tag = tag.downcase)
-
-        if GRANDFATHERED_TAGS.key?(tag)
-          if self.class.canonize_grandfathered
-            tag = GRANDFATHERED_TAGS[tag]
-            raise ArgumentError, "There's no canonical form for grandfathered Language-Tag: #{thing.inspect}" unless tag
-          else
-            raise ArgumentError, "Grandfathered Language-Tag: #{thing.inspect}"
-          end
-        end
-
-        if LANGTAG_COMPOSITION_REGEX === tag
+        if !GRANDFATHERED_TAGS.key?(tag) && LANGTAG_COMPOSITION_REGEX === tag
 
           @primary = $1
           @extlang    = nil
@@ -357,16 +373,16 @@ module Rack #:nodoc:
               break if c == PRIVATEUSE
               @extensions ||= {}
               if @extensions.key?(c)
-                raise ArgumentError, "Invalid Language-Tag (repeated singleton: #{c.inspect}): #{thing.inspect}"
+                raise ArgumentError, "Invalid langtag (repeated singleton: #{c.inspect}): #{thing.inspect}"
               end
               singleton = c
               @extensions[singleton = c] = []
             elsif singleton
-              @extensions[singleton] << c # why Arrays? Because of truncate (lookup) algorithm.
+              @extensions[singleton] << c
             else
               @variants ||= []
               if @variants.include?(c)
-                raise ArgumentError, "Invalid Language-Tag (repeated variant: #{c.inspect}): #{thing.inspect}"
+                raise ArgumentError, "Invalid langtag (repeated variant: #{c.inspect}): #{thing.inspect}"
               end
               @variants << c
             end
@@ -377,12 +393,11 @@ module Rack #:nodoc:
           @composition  = @tag.downcase
 
         else
-          raise ArgumentError, "Malformed or 'privateuse' Language-Tag: #{thing.inspect}"
+          raise ArgumentError, "Malformed, grandfathered or 'privateuse' Language-Tag: #{thing.inspect}"
         end
 
         self
       end
-
     end
   end
 end

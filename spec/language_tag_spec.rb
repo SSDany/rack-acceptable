@@ -37,7 +37,7 @@ describe Rack::Acceptable::LanguageTag, ".grandfathered?" do
 
 end
 
-shared_examples_for "simple Language-Tag parser" do
+shared_examples_for "simple langtag parser" do
 
   unless defined? ::MALFORMED_LANGUAGE_TAGS
     ::MALFORMED_LANGUAGE_TAGS = [ '1-GB',
@@ -102,49 +102,20 @@ describe Rack::Acceptable::LanguageTag, ".extract_language_info" do
     @parser = lambda { |tag| Rack::Acceptable::LanguageTag.extract_language_info(tag) }
   end
 
-  before :each do
-    Rack::Acceptable::LanguageTag.canonize_grandfathered = false
-  end
-
-  after :each do
-    Rack::Acceptable::LanguageTag.canonize_grandfathered = false
-  end
-
-  it_should_behave_like "simple Language-Tag parser"
+  it_should_behave_like "simple langtag parser"
 
   it "returns nil when there's a 'privateuse' Language-Tag" do
     @parser[ 'x-private'            ].should == nil
     @parser[ 'x-private1-private2'  ].should == nil
   end
 
-  describe "when there's a 'grandfathered' Language-Tag" do
-
-    it "returns nil if :canonize_grandfathered option is off" do
-      @parser[ 'i-enochian'   ].should == nil
-      @parser[ 'cel-gaulish'  ].should == nil
-      @parser[ 'art-lojban'   ].should == nil
-      @parser[ 'i-klingon'    ].should == nil
-      @parser[ 'zh-min-nan'   ].should == nil
-      @parser[ 'zh-xiang'     ].should == nil
-    end
-
-    it "returns nil if :canonize_grandfathred option is on, but there's no a canonical form of the tag" do
-      @parser[ 'i-enochian'   ].should == nil
-      @parser[ 'cel-gaulish'  ].should == nil
-
-      Rack::Acceptable::LanguageTag.canonize_grandfathered = true
-      @parser[ 'i-enochian'   ].should == nil
-      @parser[ 'cel-gaulish'  ].should == nil
-    end
-
-    it "handles the tag if :canonize_grandfathered option is on and there's a canonical form of the tag" do
-      Rack::Acceptable::LanguageTag.canonize_grandfathered = true
-      @parser[ 'art-lojban'   ].should == ['jbo', nil, nil, nil, nil]
-      @parser[ 'i-klingon'    ].should == ['tlh', nil, nil, nil, nil]
-      @parser[ 'zh-min-nan'   ].should == ['nan', nil, nil, nil, nil]
-      @parser[ 'zh-xiang'     ].should == ['hsn', nil, nil, nil, nil]
-    end
-
+  it "returns nil when there's a 'grandfathered' Language-Tag" do
+    @parser[ 'i-enochian'   ].should == nil
+    @parser[ 'cel-gaulish'  ].should == nil
+    @parser[ 'art-lojban'   ].should == nil
+    @parser[ 'i-klingon'    ].should == nil
+    @parser[ 'zh-min-nan'   ].should == nil
+    @parser[ 'zh-xiang'     ].should == nil
   end
 
   it "returns nil when there's something malformed" do
@@ -155,7 +126,7 @@ end
 
 describe Rack::Acceptable::LanguageTag, ".parse" do
 
-  it "returns the argument passed, if it is already a LanguageTag" do
+  it "returns the argument passed, if it is already a Rack::Acceptable::LanguageTag" do
     tag = Rack::Acceptable::LanguageTag.parse('de-DE')
     Rack::Acceptable::LanguageTag.parse(tag).should == tag
   end
@@ -186,74 +157,68 @@ describe Rack::Acceptable::LanguageTag, "#recompose" do
     @tag = Rack::Acceptable::LanguageTag.allocate
   end
 
+  describe "without arguments" do
+
+    before :each do
+      @tag.recompose('en-GB')
+      @old_composition = @tag.instance_variable_get(:@composition)
+    end
+
+    it "returns self immediately if there are no changes" do
+      @tag.region = 'GB'
+      @tag.recompose
+      @old_composition.should be_eql @tag.instance_variable_get(:@composition)
+    end
+
+    it "recomposes self if there are some changes" do
+      @tag.region = 'US'
+      @tag.recompose
+      @old_composition.should_not be_eql @tag.instance_variable_get(:@composition)
+    end
+
+    it "blabla" do
+      @tag.region = 'US'
+      @tag.recompose('en-us')
+      @old_composition.should be_eql @tag.instance_variable_get(:@composition)
+    end
+
+  end
+
   it "raises an ArgumentError when there's something malformed" do
     ::MALFORMED_LANGUAGE_TAGS.each do |tag|
       lambda { @tag.recompose(tag) }.
-      should raise_error ArgumentError, %r{Malformed or 'privateuse' Language-Tag}
+      should raise_error ArgumentError, %r{Malformed, grandfathered or 'privateuse' Language-Tag}
     end
   end
 
-  describe "when the argument passed represents a 'grandfathered' Language-Tag" do
-
-    before :each do
-      Rack::Acceptable::LanguageTag.canonize_grandfathered = false
-    end
-
-    it "raises an ArgumentError, when 'canonize_grandfathered' option is off" do
-      lambda { @tag.recompose('zh-hakka') }.should raise_error ArgumentError, %r{Grandfathered Language-Tag}
-      lambda { @tag.recompose('i-enochian') }.should raise_error ArgumentError, %r{Grandfathered Language-Tag}
-    end
-
-    describe "and 'canonize_grandfathered' option is on" do
-
-      it "creates the LanguageTag, if there's a canonical form" do
-        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
-        @tag.recompose('zh-hakka')
-        @tag.primary.should == 'hak'
-        @tag.extlang.should == nil
-        @tag.script.should == nil
-        @tag.region.should == nil
-        @tag.variants.should == nil
-        @tag.extensions.should == nil
-        @tag.privateuse.should == nil
-      end
-
-      it "raises an ArgumentError otherwise" do
-        Rack::Acceptable::LanguageTag.canonize_grandfathered = true
-        lambda { @tag.recompose('i-enochian') }.should raise_error ArgumentError,
-        %r{There's no canonical form for grandfathered Language-Tag}
-      end
-
-    end
-
-    after :each do
-      Rack::Acceptable::LanguageTag.canonize_grandfathered = false
-    end
-
+  it "raises an ArgumentError when the argument passed represents a 'grandfathered' Language-Tag" do
+    lambda { @tag.recompose('zh-hakka') }.should raise_error ArgumentError, %r{Malformed, grandfathered or 'privateuse' Language-Tag}
+    lambda { @tag.recompose('i-enochian') }.should raise_error ArgumentError, %r{Malformed, grandfathered or 'privateuse' Language-Tag}
   end
 
-  describe "when the argument passed represents a 'privateuse' Language-Tag" do
-    it("") { pending "should we handle this as a langtag with only the 'privateuse' component?" }
+  it "raises an ArgumentError when the argument passed represents a 'privateuse' Language-Tag" do
+    lambda { @tag.recompose('x-private') }.
+    should raise_error ArgumentError, %r{Malformed, grandfathered or 'privateuse' Language-Tag}
   end
 
   describe "when the argument passed represents a 'langtag'" do
 
-    it_should_behave_like "simple Language-Tag parser"
+    it_should_behave_like "simple langtag parser"
 
     it "raises an ArgumentError when there's a repeated singleton (RFC 5646, sec. 2.2.9)" do
       lambda { @tag.recompose('en-GB-a-xxx-b-yyy-a-zzz-x-private') }.
-      should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated singleton: "a"\)}
+      should raise_error ArgumentError, %r{Invalid langtag \(repeated singleton: "a"\)}
 
       lambda { @tag.recompose('en-GB-a-xxx-b-yyy-A-zzz-x-private') }.
-      should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated singleton: "a"\)}
+      should raise_error ArgumentError, %r{Invalid langtag \(repeated singleton: "a"\)}
     end
 
     it "raises an ArgumentError when there's a repeated variant (RFC 5646, sec. 2.2.9)" do
       lambda { @tag.recompose('sl-IT-nedis-nedis') }.
-      should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated variant: "nedis"\)}
+      should raise_error ArgumentError, %r{Invalid langtag \(repeated variant: "nedis"\)}
 
       lambda { @tag.recompose('sl-IT-nedis-nEdIS') }.
-      should raise_error ArgumentError, %r{Invalid Language-Tag \(repeated variant: "nedis"\)}
+      should raise_error ArgumentError, %r{Invalid langtag \(repeated variant: "nedis"\)}
     end
 
     it "defaults extensions to nil" do
@@ -366,7 +331,7 @@ end
 
 describe Rack::Acceptable::LanguageTag, "#==" do
 
-  it "returns true, when there's a LanguageTag and tags are equal" do
+  it "returns true, when there's a Rack::Acceptable::LanguageTag and tags are equal" do
     tag1 = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     tag2 = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     tag3 = Rack::Acceptable::LanguageTag.parse('SL-ROZAJ-biske')
@@ -403,7 +368,7 @@ end
 
 describe Rack::Acceptable::LanguageTag, "#===" do
 
-  it "returns true, when there's a LanguageTag and tags are equal" do
+  it "returns true, when there's a Rack::Acceptable::LanguageTag and tags are equal" do
     tag1 = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     tag2 = Rack::Acceptable::LanguageTag.parse('sl-rozaj-biske')
     tag3 = Rack::Acceptable::LanguageTag.parse('SL-ROZAJ-biske')
@@ -448,7 +413,7 @@ end
 
 describe Rack::Acceptable::LanguageTag, "#valid?" do
 
-  it "returns true, when the LanguageTag is valid" do
+  it "returns true, when self is valid" do
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile-private1').should be_valid
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1-x-wadegile').should be_valid
     Rack::Acceptable::LanguageTag.parse('zh-Latn-CN-variant1-a-extend1').should be_valid
