@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'rack'
+require 'rack/utils'
 require 'rack/acceptable'
 
 Rack::Acceptable::MIMETypes.reset
