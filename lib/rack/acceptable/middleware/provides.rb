@@ -25,7 +25,7 @@ module Rack #:nodoc:
       CANDIDATE_INFO = 'rack-acceptable.provides.candidate_info'
 
       # ==== Parameters
-      # app<String>:: Rack application.
+      # app<#call>:: Rack application.
       # provides<Array>:: List of available MIME-Types.
       # options<Hash>:: Additional options.
       #
@@ -82,8 +82,7 @@ module Rack #:nodoc:
           @lookup[header]
         else
           accepts = request.acceptable_media
-          @lookup[header] = accepts.empty? ? @provides.first :
-            MIMETypes.detect_best_mime_type(@provides, accepts)
+          @lookup[header] = accepts.empty? ? @provides.first : request.preferred_media_from(*@provides)
         end
       rescue
         @lookup[header] = nil # The Accept request-header is malformed.
