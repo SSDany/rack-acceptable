@@ -6,6 +6,7 @@ module Rack #:nodoc:
       MEDIA_RANGE_WILDCARD      = '*/*'.freeze
       IDENTITY                  = 'identity'.freeze
       ISO_8859_1                = 'iso-8859-1'.freeze
+      TEXT                      = 'text'.freeze
 
       COMMA                     = ','.freeze
       EMPTY_STRING              = ''.freeze
@@ -18,6 +19,7 @@ module Rack #:nodoc:
       ENV_HTTP_ACCEPT_CHARSET   = 'HTTP_ACCEPT_CHARSET'.freeze
       ENV_HTTP_ACCEPT_LANGUAGE  = 'HTTP_ACCEPT_LANGUAGE'.freeze
 
+      CHARSET                   = 'charset'.freeze
       CONTENT_TYPE              = 'Content-Type'.freeze
       CONTENT_LENGTH            = 'Content-Length'.freeze
 
