@@ -31,4 +31,16 @@ p request.preferred_media_from('text/css','text/html') #=> "text/css"
 p request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever" # most specific wins
 p request.preferred_media_from('text/x-json','text/html;p=Whatever') #=> "text/x-json" # parameter values are case-sensitive.
 
+
+env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*,text/x-json')
+request = Request.new(env)
+
+# by_qvalue_only = false
+p request.preferred_media_from('text/css','text/x-json', false) #=> "text/x-json"
+p request.preferred_media_from('text/x-json','text/css', false) #=> "text/x-json"
+
+# by_qvalue_only = true
+p request.preferred_media_from('text/css','text/x-json', true) #=> "text/css" 
+p request.preferred_media_from('text/x-json','text/css', true) #=> "text/x-json"
+
 # EOF
