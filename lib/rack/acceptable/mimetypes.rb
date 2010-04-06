@@ -23,11 +23,12 @@ module Rack #:nodoc:
 
       # ==== Parameters
       # thing<String>::
-      #   The MIME-Type snippet, *without* 'q' parameter, accept-extensions and so on.
+      #   The Media-Type snippet or the single item from the HTTP_ACCEPT
+      #   request-header, *without* 'q' parameter, accept-extensions and so on.
       #
       # ==== Returns
       # Array[String, String, Hash]::
-      #   Media-Range of the MIME-Type: type, subtype and parameter (as a +Hash+).
+      #   Media-Range: type, subtype and parameter (as a +Hash+).
       #
       # ==== Raises
       # Same things as Utils#split_mime_type.
@@ -57,7 +58,8 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # thing<String>:: The MIME-Type snippet (from the Accept request-header).
+      # thing<String>::
+      #   The Media-Type snippet or the single item from the HTTP_ACCEPT request-header.
       #
       # ==== Returns
       # Array[String, String, Hash, Float, Hash]::
@@ -66,8 +68,8 @@ module Rack #:nodoc:
       #
       # ==== Raises
       # ArgumentError::
-      #   MIME-Type has malformed quality factor, or
-      #   type/subtype pair is not in a RFC 'Media-Range' pattern.
+      #   There's a malformed quality factor, or type/subtype pair
+      #   is not in a RFC 'Media-Range' pattern.
       #
       def parse_mime_type(thing)
 
@@ -120,26 +122,29 @@ module Rack #:nodoc:
       end
 
       # ==== Parameters
-      # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
-      # types<Array>:: The Array of *parsed* MIME-Types to check against.
+      # thing<String, Array>:: The Media-Type snippet or *parsed* Media-Type.
+      # types<Array>:: Parsed HTTP_ACCEPT request-header to check against.
       #
       # ==== Returns
-      # Float:: The quality factor (relative strength of the MIME-Type).
+      # Float:: The quality factor (relative strength of the Media-Type).
       #
       def qualify_mime_type(thing, types)
         weigh_mime_type(thing, types).first
       end
 
       # ==== Parameters
-      # thing<String, Array>:: The MIME-Type snippet or *parsed* media-range.
-      # types<Array>:: The Array of *parsed* MIME-Types to check against.
+      # thing<String, Array>:: The Media-Type snippet or *parsed* Media-Type.
+      # types<Array>:: Parsed HTTP_ACCEPT request-header to check against.
+      # qvalue_only<Boolean>:: Flag to force weighting to return the qvalue only.
+      #                        Optional. Default is +false+.
       #
       # ==== Returns
-      # Array[Float, Integer, Integer, Integer]::
-      #   Quality factor, rate, specificity and negated index of the most relevant MIME-Type;
-      #   i.e full relative weight of the MIME-Type.
+      # Array[Float, Integer, Integer, Integer] or Array[Float]::
+      #   Quality factor, rate, specificity and negated index of the most relevant Media-Range;
+      #   i.e full relative weight of the Media-Type. If +qvaulue_only+ option is set to true,
+      #   returns qvalue only.
       #
-      def weigh_mime_type(thing, types)
+      def weigh_mime_type(thing, types, qvalue_only = false)
 
         type, subtype, params = thing.is_a?(String) ? parse_media_range(thing) : thing
 
@@ -196,30 +201,31 @@ module Rack #:nodoc:
           end
         end
 
-        [quality, rate, specificity, -index]
+        qvalue_only ? [quality] : [quality, rate, specificity, -index]
       end
 
       # ==== Parameters
-      # provides<Array>:: The Array of available MIME-Types (snippets or parsed media-ranges). Could be empty.
-      # accepts<String>:: The Array of acceptable MIME-Types. Could be empty.
+      # provides<Array>:: The Array of available Media-Types (snippets or parsed). Could be empty.
+      # accepts<String>:: The Array of acceptable Media-Ranges. Could be empty.
+      # by_qvalue_only<String>:: Optional flag, see MIMETypes#weigh_mime_type. Default is +false+.
       #
       # ==== Returns
-      # The best one of available MIME-Types or +nil+.
+      # The best one of available Media-Types or +nil+.
       #
       # ==== Raises
       # Same things as Utils#parse_media_range.
       #
       # ==== Notes
-      # Acceptable MIME-Types are supposed to have *downcased* and *well-formed*
+      # Acceptable Media-Types are supposed to have *downcased* and *well-formed*
       # type, subtype, parameter's keys (according to RFC 2616, enumerated things
       # are case-insensitive too), and *sensible* qvalues ("real numbers in the
       # range 0 through 1, where 0 is the minimum and 1 the maximum value").
       #
-      def detect_best_mime_type(provides, accepts)
+      def detect_best_mime_type(provides, accepts, by_qvalue_only = false)
         return nil if provides.empty?
         return provides.first if accepts.empty?
         i = 1
-        candidate = provides.map { |t| weigh_mime_type(t,accepts) << i-=1 }.max
+        candidate = provides.map { |t| weigh_mime_type(t,accepts,by_qvalue_only) << i-=1 }.max
         candidate.at(0) == 0 ? nil : provides.at(-candidate.last)
       end
 

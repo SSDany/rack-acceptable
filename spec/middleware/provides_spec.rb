@@ -19,10 +19,12 @@ describe Rack::Acceptable::Provides do
       app!(@keys)
       @middleware = Rack::Acceptable::Provides.new(app, @provides)
     end
-
+  
     describe "and some of available MIME-Types are also acceptable" do
 
       it "detects the best MIME-Type" do
+
+        @middleware = Rack::Acceptable::Provides.new(app, @provides)
 
         request!('HTTP_ACCEPT' => 'text/x-json;q=0,application/json;q=0.5')
         @response.should be_ok
@@ -44,10 +46,6 @@ describe Rack::Acceptable::Provides do
         @response.should be_ok
         body.should == ['text/x-json', ['text', 'x-json', {}]]
 
-        request!('HTTP_ACCEPT' => 'text/plain,*/*')
-        @response.should be_ok
-        body.should == ['text/plain', ['text', 'plain', {}]]
-
         request!('HTTP_ACCEPT' => 'text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5')
         @response.should be_ok
         body.should == ['text/xml', ['text', 'xml', {}]]
@@ -55,6 +53,17 @@ describe Rack::Acceptable::Provides do
         request!("HTTP_ACCEPT" => "text/x-json;q=0,text/plain;q=0.3")
         @response.should be_ok
         body.should == ['text/plain', ['text', 'plain', {}]]
+
+        request!('HTTP_ACCEPT' => 'text/plain,*/*')
+        @response.should be_ok
+        body.should == ['text/plain', ['text', 'plain', {}]]
+
+        @middleware = Rack::Acceptable::Provides.new(app, @provides, :negotiate_by => :qvalue_only)
+
+        request!('HTTP_ACCEPT' => 'text/plain,*/*')
+        @response.should be_ok
+        body.should == ['text/x-json', ['text', 'x-json', {}]]
+
       end
 
       it "sets the Content-Type response-header, if necessary" do

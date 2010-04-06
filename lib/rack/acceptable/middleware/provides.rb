@@ -27,12 +27,14 @@ module Rack #:nodoc:
       # ==== Parameters
       # app<#call>:: Rack application.
       # provides<Array>:: List of available MIME-Types.
-      # options<Hash>:: Additional options.
+      # options<Hash>:: Additional options, like +negotiate_by+. See also the
+      #                 Rack::Acceptable::MIMETypes#detect_best_mime_type method.
       #
       def initialize(app, provides, options = {})
         raise "You should provide the list of available MIME-Types." if provides.empty?
         @app = app
         @provides = provides.map { |type| MIMETypes.parse_media_range(type) << type }
+        @provides << (options[:negotiate_by] == :qvalue_only ? true : false)
         @lookup = {}
         @force_format = !!options[:force_format]
         if @force_format && options.key?(:default_format)
@@ -67,8 +69,8 @@ module Rack #:nodoc:
 
       # Picks out an extension for the MIME-Type given.
       # Override this to force the usage of another MIME-Type registry.
-      # See Rack::Acceptable::MIMETypes about the addition of new
-      # entries to the registry etc.
+      # See Rack::Acceptable::MIMETypes about the manipulating with
+      # entries in the registry.
       #
       def _extension_for(thing)
         MIMETypes.extension_for(thing) || @_extension
