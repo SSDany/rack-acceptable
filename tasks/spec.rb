@@ -11,7 +11,7 @@ begin
         t.spec_opts << '--options' << 'spec/spec.opts' if File.exists?('spec/spec.opts')
         t.spec_files = Pathname.glob(ENV['FILES'] || files.to_s).map { |file| file.to_s }
         t.rcov = rcov
-        t.rcov_opts << '--exclude' << 'spec'
+        t.rcov_opts << '--exclude' << 'spec' << '--exclude' << 'gems'
         t.rcov_opts << '--text-report'
         t.rcov_opts << '--sort' << 'coverage' << '--sort-reverse'
         t.rcov_dir = 'coverage'
