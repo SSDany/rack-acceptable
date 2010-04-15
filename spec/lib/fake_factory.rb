@@ -1,3 +1,4 @@
+require 'yaml'
 module SpecHelpers
   module FakeFactory
 
@@ -5,7 +6,7 @@ module SpecHelpers
     attr_reader :app
 
     def app!(keys, status = 200, headers = {})
-      @app = lambda { |env| [status, headers, [env.values_at(*keys).to_yaml]] }
+      @app = lambda { |env| [status, headers, [YAML.dump(env.values_at(*keys))]] }
     end
 
     def request!(*args)
