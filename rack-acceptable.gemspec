@@ -1,8 +1,10 @@
 GEMSPEC = Gem::Specification.new do |s|
 
-  s.name = 'rack-acceptable'
+  s.name = 'acceptable'
+  s.rubyforge_project = 'acceptable'
   s.version = '0.2.1'
   s.platform = Gem::Platform::RUBY
+  s.homepage = "http://github.com/SSDany/rack-acceptable"
   s.has_rdoc = true
   s.extra_rdoc_files = %w(README.rdoc)
   s.summary = 'HTTP Accept parsers for Rack.'
