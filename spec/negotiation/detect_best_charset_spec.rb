@@ -71,6 +71,9 @@ describe Rack::Acceptable::Utils, ".detect_best_charset" do
     @helper[provides  , ['windows-1252', 0.5], ['iso-8859-5', 0.5], ['*', 0.1]  ].should == 'windows-1252'
     @helper[provides  , ['iso-8859-5', 0.5], ['windows-1252', 0.5], ['*', 0.1]  ].should == 'iso-8859-5'
 
+    @helper[provides  , ['windows-1252', 0.5], ['iso-8859-5', 0.5], ['*', 0.0]  ].should == 'windows-1252'
+    @helper[provides  , ['iso-8859-5', 0.5], ['windows-1252', 0.5], ['*', 0.0]  ].should == 'iso-8859-5'
+
     # stable sorting
     @helper[provides  , ['*', 0.1], ['windows-1252', 0.5], ['iso-8859-5', 0.5]  ].should == 'windows-1252'
     @helper[provides  , ['*', 0.1], ['iso-8859-5', 0.5], ['windows-1252', 0.5]  ].should == 'iso-8859-5'

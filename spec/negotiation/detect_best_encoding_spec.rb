@@ -9,6 +9,7 @@ describe Rack::Acceptable::Utils, ".detect_best_encoding" do
       Rack::Acceptable::Utils.detect_best_encoding(provides, accepts)
     end
 
+    helper[%w(compress gzip identity)                                     ].should == 'identity'
     helper[%w(identity)               , ['*', 0.0]                        ].should == nil
     helper[%w(compress gzip identity) , ['*', 1.0]                        ].should == 'compress'
     helper[%w()                       , ['compress', 1.0]                 ].should == nil
@@ -21,6 +22,7 @@ describe Rack::Acceptable::Utils, ".detect_best_encoding" do
     helper[%w(compress gzip identity) , ['compress',0.0], ['gzip',0.0]    ].should == 'identity'
 
     helper[%w(compress gzip identity) , ['compress',1.0], ['gzip',1.0]    ].should == 'compress'
+    helper[%w(compress gzip identity) , ['compress',0.5], ['gzip',1.0]    ].should == 'gzip'
     helper[%w(compress gzip identity) , ['gzip',1.0], ['compress',0.5]    ].should == 'gzip'
     helper[%w(compress gzip identity) , ['gzip',0.5], ['compress',1.0]    ].should == 'compress'
     helper[%w(compress gzip identity) , ['*',0.0], ['identity',0.1]       ].should == 'identity'
@@ -29,10 +31,18 @@ describe Rack::Acceptable::Utils, ".detect_best_encoding" do
     helper[%w(compress gzip identity) , ['identity',0.1], ['gzip',0.5]    ].should == 'gzip'
     helper[%w(compress gzip)          , ['identity',0.1], ['*',0.0]       ].should == nil
 
-    # stable sorting:
+
+    # stable sorting etc:
 
     helper[%w(compress gzip identity) , ['compress',1.0], ['gzip',1.0]  ].should == 'compress'
+    helper[%w(gzip compress identity) , ['compress',1.0], ['gzip',1.0]  ].should == 'compress'
     helper[%w(compress gzip identity) , ['gzip',1.0], ['compress',1.0]  ].should == 'gzip'
+    helper[%w(gzip compress identity) , ['gzip',1.0], ['compress',1.0]  ].should == 'gzip'
+
+    helper[%w(compress gzip identity),  ['*',1.0], ['compress',1.0]].should == 'gzip'
+    helper[%w(gzip compress identity),  ['*',1.0], ['compress',1.0]].should == 'gzip'
+    helper[%w(compress gzip identity),  ['compress',1.0], ['*',1.0]].should == 'compress'
+    helper[%w(gzip compress identity),  ['compress',1.0], ['*',1.0]].should == 'compress'
 
     helper[%w(compress gzip identity) , ['compress',0.5], ['gzip',0.5], ['deflate', 1.0]  ].should == 'compress'
     helper[%w(compress gzip identity) , ['gzip',0.5], ['compress',0.5], ['deflate', 1.0]  ].should == 'gzip'
