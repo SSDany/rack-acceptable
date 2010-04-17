@@ -1,10 +1,16 @@
+=== DESCRIPTION
+
+Provides definitive support for Accept-* headers, strictly compliant with RFC 2616.
+Includes negotiation algorithms for Media-Types, Charsets and Content-Codings.
+Also realizes perfectionistic LanguageTags support with basic/extended filtering (RFC 5646, RFC 4647).
+
 == FEATURES:
 
-  * Accept-* headers support, strictly compliant with RFC 2616
-  * Media-Type negotiation
-  * Charset negotiation
-  * Content-coding negotiation
-  * LanguageTags (RFC 5646, RFC 4647)
+* Accept-* headers support, strictly compliant with RFC 2616
+* Media-Type negotiation
+* Charset negotiation
+* Content-coding negotiation
+* LanguageTags (RFC 5646, RFC 4647)
 
 == EXAMPLES:
 
