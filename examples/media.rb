@@ -25,12 +25,11 @@ request = Request.new(env)
 p request.preferred_media_from('text/css','text/x-json') #=> "text/x-json"
 p request.preferred_media_from('text/css','text/x-JSON') #=> "text/x-JSON"
 
-env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*,text/x-json,text/html;p=whatever')
+env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*;q=0.8,text/x-json;q=0.8,text/html;p=whatever')
 request = Request.new(env)
 p request.preferred_media_from('text/css','text/html') #=> "text/css"
-p request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever" # most specific wins
+p request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever"
 p request.preferred_media_from('text/x-json','text/html;p=Whatever') #=> "text/x-json" # parameter values are case-sensitive.
-
 
 env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*,text/x-json')
 request = Request.new(env)
