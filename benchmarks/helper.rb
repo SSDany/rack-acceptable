@@ -3,6 +3,13 @@ $:.unshift(dir) unless $:.include?(dir)
 
 require 'rack/acceptable'
 require 'rubygems'
-require 'rbench'
+
+begin
+  require 'rbench'
+rescue LoadError
+  $stderr << "You should have rbench installed in order to run benchmarks.\n" \
+             "Try $gem in rbench\n" \
+             "or take a look at http://github.com/somebee/rbench\n"
+end
 
 # EOF
