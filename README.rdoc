@@ -1,12 +1,62 @@
+== FEATURES:
+
+  * Accept-* headers support, strictly compliant with RFC 2616
+  * Media-Type negotiation
+  * Charset negotiation
+  * Content-coding negotiation
+  * LanguageTags (RFC 5646, RFC 4647)
+
+== EXAMPLES:
+
+=== Media
+
+  env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/plain;q=0,text/*')
+  request = Request.new(env)
+  p request.accept_media?('text/css') #=> true
+  p request.accept_media?('text/plain') #=> false
+  p request.accept_media?('video/quicktime') #=> false
+
+  env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*;q=0.8,text/x-json;q=0.8,text/html;p=whatever')
+  request = Request.new(env)
+  p request.preferred_media_from('text/css','text/html') #=> "text/css"
+  p request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever"
+  p request.preferred_media_from('text/x-json','text/html;p=Whatever') #=> "text/x-json" #parameter values are case-sensitive.
+
+=== LanguageTags
+
+  langtag = Rack::Acceptable::LanguageTag.parse('SL-LATN-ROZAJ')
+
+  p langtag.variants #=> ["rozaj"]
+  p langtag.script #=> "Latn"
+
+  # basic filtering (RFC 4647)
+  p langtag.has_prefix?('sl-Latn') #=> true
+  p langtag.matched_by_basic_range?('sl-Latn') #=> true
+  p langtag.has_prefix?('sl-Latn-ro') #=> false
+  p langtag.has_prefix?('sl') #=> true
+
+  # extended filtering (RFC 4647)
+  p langtag.matched_by_extended_range?('*') #=> true
+  p langtag.matched_by_extended_range?('sl-*') #=> true
+  p langtag.matched_by_extended_range?('*-Latn') #=> true
+  p langtag.matched_by_extended_range?('sl-rozaj') #=> true
+  p langtag.matched_by_extended_range?('sl-nedis') #=> false
+
+
+== INSTALLATION:
+
+rack-acceptable is available via rubygems:
+  $gem in acceptable
+
 == REQUIREMENTS:
 
-rack (~>1.0)
+rack (>=1.0.0)
 
 == LICENSE:
 
 (The MIT License)
 
-Copyright (c) 2009
+Copyright (c) 2010
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
