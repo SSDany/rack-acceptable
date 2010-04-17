@@ -8,7 +8,7 @@ GEMSPEC = Gem::Specification.new do |s|
   s.has_rdoc = true
   s.extra_rdoc_files = %w(README.rdoc)
   s.summary = 'HTTP Accept parsers for Rack.'
-  s.description <<-DESCR
+  s.description = <<-DESCR
 Provides definitive support for Accept-* headers, strictly compliant with RFC 2616.
 Includes negotiation algorithms for Media-Types, Charsets and Content-Codings.
 Also realizes perfectionistic LanguageTags support with basic/extended filtering (RFC 5646, RFC 4647).

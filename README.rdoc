@@ -1,4 +1,4 @@
-=== DESCRIPTION
+=== DESCRIPTION:
 
 Provides definitive support for Accept-* headers, strictly compliant with RFC 2616.
 Includes negotiation algorithms for Media-Types, Charsets and Content-Codings.
