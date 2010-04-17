@@ -2,13 +2,17 @@ GEMSPEC = Gem::Specification.new do |s|
 
   s.name = 'acceptable'
   s.rubyforge_project = 'acceptable'
-  s.version = '0.2.1'
+  s.version = '0.2.2'
   s.platform = Gem::Platform::RUBY
   s.homepage = "http://github.com/SSDany/rack-acceptable"
   s.has_rdoc = true
   s.extra_rdoc_files = %w(README.rdoc)
   s.summary = 'HTTP Accept parsers for Rack.'
-  s.description = s.summary
+  s.description <<-DESCR
+Provides definitive support for Accept-* headers, strictly compliant with RFC 2616.
+Includes negotiation algorithms for Media-Types, Charsets and Content-Codings.
+Also realizes perfectionistic LanguageTags support with basic/extended filtering (RFC 5646, RFC 4647).
+DESCR
   s.authors = %w[SSDany]
   s.email = 'inadsence@gmail.com'
   s.require_path = 'lib'
