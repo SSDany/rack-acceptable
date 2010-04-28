@@ -520,4 +520,25 @@ describe Rack::Acceptable::LanguageTag, "#nicecased" do
 
 end
 
+describe Rack::Acceptable::LanguageTag, ".length" do
+
+  it "does not perform recomposition" do
+    tag = Rack::Acceptable::LanguageTag.parse('zh-yue-hk')
+    tag.should_not_receive(:recompose)
+    tag.length.should == 3
+  end
+
+  it "calculates the number of subtags in the Language-Tag" do
+    tag = Rack::Acceptable::LanguageTag.parse('zh-yue-hk')
+    tag.length.should == 3
+    tag = Rack::Acceptable::LanguageTag.parse('sl-latn-it-nedis')
+    tag.length.should == 4
+    tag = Rack::Acceptable::LanguageTag.parse('sl-latn-it-nedis-a-xxx-b-yyy-zzz')
+    tag.length.should == 9
+    tag = Rack::Acceptable::LanguageTag.parse('sl-latn-it-nedis-a-xxx-b-yyy-zzz-x-a-b')
+    tag.length.should == 12
+  end
+
+end
+
 # EOF
