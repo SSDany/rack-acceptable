@@ -39,6 +39,7 @@ module Rack #:nodoc:
       }.freeze
 
       attr_accessor :primary, :extlang, :script, :region, :variants, :extensions, :privateuse
+      attr_reader :length
 
       #--
       # RFC 5646, sec. 2.2.2:
@@ -133,7 +134,7 @@ module Rack #:nodoc:
       # ==== Notes
       # *Destructively* downcases current set of variants, if necessary.
       # Just note, that variants are case-insensitive, and 'convenient' form
-      # of the Languge-Tag assumes they're in 'lowercase' notation.
+      # of the Language-Tag assumes they're in 'lowercase' notation.
       #
       def has_variant?(variant)
         return false unless @variants
@@ -160,6 +161,7 @@ module Rack #:nodoc:
         keys
       end
 
+      # TODO: validate size of components and the primary one (it should not be nil)
       def initialize(*components)
         @primary, @extlang, @script, @region, @variants, @extensions, @privateuse = *components
       end
@@ -173,6 +175,20 @@ module Rack #:nodoc:
       end
 
       attr_reader :tag # the most recent 'build' of tag
+
+      # Returns the number of subtags in the Language-Tag.
+      # Does *not* perform validation or recomposition.
+      #
+      def length
+        length =  1 #@primary
+        length += 1 if @extlang
+        length += 1 if @script
+        length += 1 if @region
+        length += @variants.length if @variants
+        @extensions.each { |_,e| length += e.length+1 } if @extensions # length += @extenstions.to_a.flatten.length if @extensions
+        length += @privateuse.length+1 if @privateuse
+        length
+      end
 
       def nicecased
         recompose   # we could not conveniently format malformed or invalid tags
