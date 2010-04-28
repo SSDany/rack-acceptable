@@ -1,6 +1,6 @@
 # encoding: binary
 
-require File.expand_path(File.join(File.dirname(__FILE__), 'helper'))
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'helper'))
 begin
   require 'langtag'
 
@@ -54,7 +54,7 @@ begin
 
   end
 rescue LoadError
-  STDERR.puts "you need the 'langtag' gem to run this bench"
+  STDERR.puts "you should have 'langtag' gem to run this bench"
 end
 
 # EOF
