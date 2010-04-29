@@ -87,7 +87,7 @@ describe Rack::Acceptable::Headers do
   describe "#preferred_charset_from" do
 
     it "passes incoming arguments into the Rack::Acceptable::Utils#detect_best_charset" do
-      request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0.7, text/*;q=0.7')
+      request = fake_request('HTTP_ACCEPT_CHARSET' => 'foo, bar')
 
       Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
       request.preferred_charset_from('foo', 'bar').should == :the_best_one
