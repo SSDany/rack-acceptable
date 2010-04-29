@@ -5,6 +5,21 @@ module Rack #:nodoc:
     module Media
 
       # ==== Returns
+      # An Array with Media-Ranges (as +Strings+) / wildcards and
+      # associated qvalues. Default qvalue is 1.0.
+      #
+      # ==== Raises
+      # ArgumentError::
+      #   There's a malformed qvalue in header.
+      #
+      def acceptable_media_ranges
+        Utils.extract_qvalues(env[Const::ENV_HTTP_ACCEPT].to_s)
+      rescue
+        raise ArgumentError,
+        "Malformed Accept header: #{env[Const::ENV_HTTP_ACCEPT].inspect}"
+      end
+
+      # ==== Returns
       # An Array with *completely* parsed MIME-Types (incl. qvalues
       # and accept-extensions; see Rack::Acceptable::MIMETypes).
       # Default qvalue is 1.0.

@@ -11,6 +11,22 @@ describe Rack::Acceptable::Media do
     @_request.new(env)
   end
 
+  describe "#acceptable_media_ranges" do
+
+    before :all do
+      @parser = lambda { |thing| fake_request('HTTP_ACCEPT' => thing).acceptable_media_ranges }
+      @qvalue = lambda { |thing| fake_request('HTTP_ACCEPT' => thing).acceptable_media_ranges.first.last }
+      @sample = 'text/plain'
+      @message = %r{Malformed Accept header}
+    end
+
+    describe "when parsing standalone snippet" do
+      it_should_behave_like 'simple qvalues parser'
+    end
+
+    it_should_behave_like 'simple HTTP_ACCEPT parser'
+  end
+
   describe "#accept_media?" do
 
     it "returns true, if the MIME-Type passed acceptable" do
