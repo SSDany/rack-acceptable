@@ -24,25 +24,6 @@ module Rack #:nodoc:
       end
 
       # ==== Returns
-      # An Array with wildcards / *downcased* Charsets and
-      # associated quality factors (qvalues). Default qvalue is 1.0.
-      #
-      # ==== Raises
-      # ArgumentError::
-      #   Syntax of the Accept-Charset request-header is bad.
-      #   For example, one of Charsets is not a 'token',
-      #   one of quality factors is malformed etc.
-      #
-      def acceptable_charsets
-        Utils.parse_header(
-          env[Const::ENV_HTTP_ACCEPT_CHARSET].to_s.downcase,
-          Utils::HTTP_ACCEPT_TOKEN_REGEX)
-      rescue
-        raise ArgumentError,
-        "Malformed Accept-Charset header: #{env[Const::ENV_HTTP_ACCEPT_CHARSET].inspect}"
-      end
-
-      # ==== Returns
       # An Array with wildcards / Language-Tags (as +Strings+)
       # and associated quality factors (qvalues). Default qvalue is 1.0.
       #

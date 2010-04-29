@@ -5,24 +5,13 @@ require 'rack/acceptable/mixin/media'
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     class Request < Rack::Request
+
       include Rack::Acceptable::Headers
+      include Rack::Acceptable::Charsets
       include Rack::Acceptable::Media
 
       def acceptable_charsets
         @_acceptable_charsets ||= super
-      end
-
-      def accept_charset?(chs)
-        chs = chs.downcase
-        accepts = acceptable_charsets
-        return true if accepts.empty?
-        if ch = accepts.assoc(chs) || accepts.assoc(Const::WILDCARD)
-          ch.last > 0
-        else
-          chs == Const::ISO_8859_1
-        end
-      rescue
-        false
       end
 
       def accept_content?(content_type)
