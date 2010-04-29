@@ -11,12 +11,6 @@ describe Rack::Acceptable::Headers do
     @_request.new(env)
   end
 
-  it "provides the #acceptable_charsets method" do
-    request = fake_request('HTTP_ACCEPT_CHARSET' => 'unicode-1-1, iso-8859-5;q=0.5')
-    request.should respond_to :acceptable_charsets
-    lambda { request.acceptable_charsets }.should_not raise_error
-  end
-
   describe "#acceptable_charsets" do
 
     before :all do
@@ -53,6 +47,57 @@ describe Rack::Acceptable::Headers do
 
     it_should_behave_like 'simple HTTP_ACCEPT_CHARSET parser'
     it_should_behave_like 'simple parser of 1#(element) lists'
+
+  end
+
+  describe "#accept_charset?" do
+
+    before :all do
+      @helper = lambda { |chs, accepts| 
+        request = fake_request('HTTP_ACCEPT_CHARSET' => accepts)
+        request.accept_charset?(chs)
+        }
+    end
+
+    it "checks, if the Charset passed acceptable" do
+
+      @helper[  'iso-8859-1'  , '*;q=0.0'                     ].should == false
+      @helper[  'iso-8859-1'  , 'iso-8859-1;q=0.0'            ].should == false
+      @helper[  'iso-8859-1'  , 'iso-8859-1;q=0.0, *;q=1.0'   ].should == false
+      @helper[  'utf-8'       , '*;q=0.0'                     ].should == false
+      @helper[  'iso-8859-1'  , '*;q=1.0'                     ].should == true
+      @helper[  'utf-8'       , '*;q=1.0'                     ].should == true
+
+      accepts = 'iso-8859-5;q=0.3, windows-1252;q=0.5, utf-8; q=0.0'
+
+      @helper[  'windows-1252'  , accepts ].should == true
+      @helper[  'iso-8859-1'    , accepts ].should == true
+      @helper[  'utf-8'         , accepts ].should == false
+      @helper[  'bogus'         , accepts ].should == false
+
+    end
+
+    it "returns false if there's malformed Accept-Charset header" do
+      @helper[  'iso-8859-1'  , 'baaang!@'                ].should == false
+      @helper[  'iso-8859-1'  , 'iso-8859-1;q=malformed'  ].should == false
+    end
+
+  end
+
+  describe "#preferred_charset_from" do
+
+    it "passes incoming arguments into the Rack::Acceptable::Utils#detect_best_charset" do
+      request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0.7, text/*;q=0.7')
+
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+    end
 
   end
 

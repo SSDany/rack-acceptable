@@ -21,6 +21,7 @@ module Rack #:nodoc:
         "Malformed Accept-Charset header: #{env[Const::ENV_HTTP_ACCEPT_CHARSET].inspect}"
       end
 
+      # Checks if the Charset passed acceptable.
       def accept_charset?(chs)
         chs = chs.downcase
         accepts = acceptable_charsets
@@ -33,6 +34,12 @@ module Rack #:nodoc:
       rescue
         false
       end
+
+      def negotiate_charset(*things)
+        Utils.detect_best_charset(things, acceptable_charsets)
+      end
+
+      alias :preferred_charset_from :negotiate_charset
 
     end
   end
