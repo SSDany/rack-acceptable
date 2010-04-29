@@ -7,6 +7,7 @@ module Rack #:nodoc:
     class Request < Rack::Request
 
       include Rack::Acceptable::Headers
+      include Rack::Acceptable::Languages
       include Rack::Acceptable::Charsets
       include Rack::Acceptable::Media
 

@@ -234,7 +234,8 @@ module Rack #:nodoc:
       #   de-Deva ('Deva' not equal to 'DE')
       #++
 
-      # Checks if the *extended* Language-Range passed matches self.
+      # Checks if the *extended* Language-Range (in the shortest notation)
+      # passed matches self.
       def matched_by_extended_range?(range)
         recompose
         subtags = @composition.split(Const::HYPHEN)
