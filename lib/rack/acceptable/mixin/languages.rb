@@ -1,3 +1,5 @@
+require 'rack/acceptable/language_tag'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Languages

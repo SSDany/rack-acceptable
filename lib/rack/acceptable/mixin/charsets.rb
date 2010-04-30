@@ -1,3 +1,5 @@
+require 'rack/acceptable/utils'
+
 module Rack #:nodoc:
   module Acceptable #:nodoc:
     module Charsets
