@@ -26,7 +26,10 @@ module Rack #:nodoc:
         "Malformed Accept-Language header: #{env[Const::ENV_HTTP_ACCEPT_LANGUAGE].inspect}"
       end
 
-      # Checks if the Language-Tag passed acceptable.
+      # Checks if the Language-Tag (as a +String+ or
+      # +Rack::Acceptable::LanguageTag+) passed acceptable.
+      # Works case-insensitively.
+      #
       def accept_language?(tag)
         langtag = LanguageTag.parse(tag)
         acceptable_language_ranges.any? { |l,q| q > 0 && langtag.matched_by_extended_range?(l) }
