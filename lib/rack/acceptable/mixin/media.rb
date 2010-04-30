@@ -32,16 +32,13 @@ module Rack #:nodoc:
       #   or, at last, one of MIME-Types has malformed qvalue.
       #
       def acceptable_media
-        @_acceptable_media ||= begin
-          header = env[Const::ENV_HTTP_ACCEPT].to_s
-          header.split(Utils::COMMA_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
-        end
+        header = env[Const::ENV_HTTP_ACCEPT].to_s
+        header.split(Utils::COMMA_SPLITTER).map! { |entry| MIMETypes.parse_mime_type(entry) }
       end
 
       # Checks if the MIME-Type passed acceptable.
       def accept_media?(thing)
-        qvalue = MIMETypes.weigh_mime_type(thing, acceptable_media).first
-        qvalue > 0
+        MIMETypes.weigh_mime_type(thing, acceptable_media).first > 0
       rescue
         false
       end
