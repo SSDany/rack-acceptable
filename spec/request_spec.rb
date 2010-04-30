@@ -2,9 +2,10 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
 describe Rack::Acceptable::Request do
 
-  def fake_request(options = {})
-    env = Rack::MockRequest.env_for('/', options)
-    Rack::Acceptable::Request.new(env)
+  include SpecHelpers::FakeRequest
+
+  before :all do
+    fake_request!(Rack::Acceptable::Request)
   end
 
   it "has the Rack::Acceptable::Encodings included" do
@@ -52,6 +53,28 @@ describe Rack::Acceptable::Request do
 
       request = fake_request('HTTP_ACCEPT' => 'bogus!')
       request.accept_content?('bogus!').should == false
+    end
+
+  end
+
+  describe "#acceptable_media" do
+
+    it "memoizes result of parsing" do
+      request = fake_request('HTTP_ACCEPT' => '*/*')
+      acceptable_media = request.acceptable_media
+      request.should_not_receive(:env)
+      request.acceptable_media.should == acceptable_media
+    end
+
+  end
+
+  describe "#acceptable_charsets" do
+
+    it "memoizes result of parsing" do
+      request = fake_request('HTTP_ACCEPT_ENCODING' => '*')
+      acceptable_charsets = request.acceptable_charsets
+      request.should_not_receive(:env)
+      request.acceptable_charsets.should == acceptable_charsets
     end
 
   end

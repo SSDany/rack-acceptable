@@ -8,7 +8,7 @@ describe Rack::Acceptable::Charsets do
     fake_request! { include Rack::Acceptable::Charsets }
   end
 
-  describe "methods" do
+  describe "as a mixin" do
 
     before :each do
       @request = fake_request('HTTP_ACCEPT_CHARSET' => '*')

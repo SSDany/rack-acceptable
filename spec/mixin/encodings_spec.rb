@@ -8,7 +8,7 @@ describe Rack::Acceptable::Encodings do
     fake_request! { include Rack::Acceptable::Encodings }
   end
 
-  describe "methods" do
+  describe "as a mixin" do
 
     before :each do
       @request = fake_request('HTTP_ACCEPT_ENCODING' => '*')

@@ -8,7 +8,7 @@ describe Rack::Acceptable::Languages do
     fake_request! { include Rack::Acceptable::Languages }
   end
 
-  describe "methods" do
+  describe "as a mixin" do
 
     before :each do
       @request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*')
@@ -103,6 +103,10 @@ describe Rack::Acceptable::Languages do
       it "returns false if there's malformed Accept-Language header" do
         @helper[  'en'  , 'baaang!@'        ].should == false
         @helper[  'en'  , 'en;q=malformed'  ].should == false
+      end
+
+      it "returns false if there's malformed Language-Tag" do
+        @helper[  'baaang!@'  , 'en'        ].should == false
       end
 
     end

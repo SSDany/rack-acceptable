@@ -8,7 +8,7 @@ describe Rack::Acceptable::Media do
     fake_request! { include Rack::Acceptable::Media }
   end
 
-  describe "methods" do
+  describe "as a mixin" do
 
     before :each do
       @request = fake_request('HTTP_ACCEPT' => '*/*')
@@ -111,13 +111,16 @@ describe Rack::Acceptable::Media do
     it "passes incoming arguments into the Rack::Acceptable::MIMETypes#detect_best_mime_type" do
       request = fake_request('HTTP_ACCEPT' => 'text/plain;q=0.7, text/*;q=0.7')
 
-      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).with(['foo','bar'], request.acceptable_media, false).and_return(:the_best_one)
+      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).
+      with(['foo','bar'], request.acceptable_media, false).and_return(:the_best_one)
       request.preferred_media_from('foo', 'bar').should == :the_best_one
 
-      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).with(['foo','bar'], request.acceptable_media, false).and_return(:the_best_one)
+      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).
+      with(['foo','bar'], request.acceptable_media, false).and_return(:the_best_one)
       request.preferred_media_from('foo', 'bar', false).should == :the_best_one
 
-      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).with(['foo','bar'], request.acceptable_media, true).and_return(:the_best_one)
+      Rack::Acceptable::MIMETypes.should_receive(:detect_best_mime_type).
+      with(['foo','bar'], request.acceptable_media, true).and_return(:the_best_one)
       request.preferred_media_from('foo', 'bar', true).should == :the_best_one
     end
 
