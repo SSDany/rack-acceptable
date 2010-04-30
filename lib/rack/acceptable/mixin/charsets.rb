@@ -24,8 +24,7 @@ module Rack #:nodoc:
       # Checks if the Charset passed acceptable.
       def accept_charset?(chs)
         chs = chs.downcase
-        accepts = acceptable_charsets
-        return true if accepts.empty?
+        return true if (accepts = acceptable_charsets).empty?
         if ch = accepts.assoc(chs) || accepts.assoc(Const::WILDCARD)
           ch.last > 0
         else
@@ -36,6 +35,7 @@ module Rack #:nodoc:
       end
 
       def negotiate_charset(*things)
+        things.map!{|t| t.downcase}
         Utils.detect_best_charset(things, acceptable_charsets)
       end
 

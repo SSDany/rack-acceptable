@@ -1,14 +1,34 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Headers do
+describe Rack::Acceptable::Charsets do
+
+  include SpecHelpers::FakeRequest
 
   before :all do
-    @_request = Class.new(Rack::Request){ include Rack::Acceptable::Charsets }
+    fake_request! { include Rack::Acceptable::Charsets }
   end
 
-  def fake_request(options = {})
-    env = Rack::MockRequest.env_for('/', options)
-    @_request.new(env)
+  describe "methods" do
+
+    before :each do
+      @request = fake_request('HTTP_ACCEPT_CHARSET' => '*')
+    end
+
+    it "provides the #acceptable_charsets method" do
+      @request.should respond_to :acceptable_charsets
+      lambda { @request.acceptable_charsets }.should_not raise_error
+    end
+
+    it "provides the #accept_charset? method" do
+      @request.should respond_to :accept_charset?
+      lambda { @request.accept_charset?('iso-8859-1') }.should_not raise_error
+    end
+
+    it "provides the #preferred_charset_from method" do
+      @request.should respond_to :preferred_charset_from
+      lambda { @request.preferred_charset_from('iso-8859-1','utf-8') }.should_not raise_error
+    end
+
   end
 
   describe "#acceptable_charsets" do
@@ -53,10 +73,10 @@ describe Rack::Acceptable::Headers do
   describe "#accept_charset?" do
 
     before :all do
-      @helper = lambda { |chs, accepts| 
+      @helper = lambda do |chs, accepts| 
         request = fake_request('HTTP_ACCEPT_CHARSET' => accepts)
         request.accept_charset?(chs)
-        }
+      end
     end
 
     it "checks, if the Charset passed acceptable" do
@@ -68,7 +88,7 @@ describe Rack::Acceptable::Headers do
       @helper[  'iso-8859-1'  , '*;q=1.0'                     ].should == true
       @helper[  'utf-8'       , '*;q=1.0'                     ].should == true
 
-      accepts = 'iso-8859-5;q=0.3, windows-1252;q=0.5, utf-8; q=0.0'
+      accepts = 'iso-8859-5;q=0.3,windows-1252;q=0.5,utf-8;q=0.0'
 
       @helper[  'windows-1252'  , accepts ].should == true
       @helper[  'iso-8859-1'    , accepts ].should == true
@@ -86,17 +106,28 @@ describe Rack::Acceptable::Headers do
 
   describe "#preferred_charset_from" do
 
-    it "passes incoming arguments into the Rack::Acceptable::Utils#detect_best_charset" do
+    it "downcases available charsets" do
+      request = fake_request('HTTP_ACCEPT_CHARSET' => 'foo, bar')
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets)
+      charsets = ['FOO','BAR']
+      request.preferred_charset_from(*charsets)
+      charsets.should == ['FOO','BAR']
+    end
+
+    it "and passes them into the Rack::Acceptable::Utils#detect_best_charset" do
       request = fake_request('HTTP_ACCEPT_CHARSET' => 'foo, bar')
 
-      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
-      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).
+      with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('FOO', 'BAR').should == :the_best_one
 
-      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
-      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).
+      with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('FOO', 'BAR').should == :the_best_one
 
-      Rack::Acceptable::Utils.should_receive(:detect_best_charset).with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
-      request.preferred_charset_from('foo', 'bar').should == :the_best_one
+      Rack::Acceptable::Utils.should_receive(:detect_best_charset).
+      with(['foo','bar'], request.acceptable_charsets).and_return(:the_best_one)
+      request.preferred_charset_from('FOO', 'BAR').should == :the_best_one
     end
 
   end
