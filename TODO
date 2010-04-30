@@ -1,0 +1,5 @@
+* RA::Encodings#negotiate_encoding(*things)
+* RA::Encodings#accept_encoding?(thing)
+* RA::Languages#negotiate_language(*things)
+* examples (Encodings, Charsets, Languages)
+
