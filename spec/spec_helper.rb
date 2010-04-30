@@ -9,6 +9,7 @@ begin
   SPEC_ROOT = Pathname(__FILE__).dirname.expand_path
 
   require SPEC_ROOT + 'lib' + 'fake_factory'
+  require SPEC_ROOT + 'lib' + 'fake_request'
 
   SHARED_EXAMPLES_ROOT = SPEC_ROOT + 'shared'
 
