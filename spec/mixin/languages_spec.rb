@@ -1,14 +1,29 @@
 require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
-describe Rack::Acceptable::Headers do
+describe Rack::Acceptable::Languages do
+
+  include SpecHelpers::FakeRequest
 
   before :all do
-    @_request = Class.new(Rack::Request){ include Rack::Acceptable::Languages }
+    fake_request! { include Rack::Acceptable::Languages }
   end
 
-  def fake_request(options = {})
-    env = Rack::MockRequest.env_for('/', options)
-    @_request.new(env)
+  describe "methods" do
+
+    before :each do
+      @request = fake_request('HTTP_ACCEPT_LANGUAGE' => '*')
+    end
+
+    it "provides the #acceptable_language_ranges method" do
+      @request.should respond_to :acceptable_language_ranges
+      lambda { @request.acceptable_language_ranges }.should_not raise_error
+    end
+
+    it "provides the #accept_language? method" do
+      @request.should respond_to :accept_language?
+      lambda { @request.accept_language?('en') }.should_not raise_error
+    end
+
   end
 
   describe "#acceptable_language_ranges" do
@@ -76,6 +91,7 @@ describe Rack::Acceptable::Headers do
         @helper[  'en-a-xxx-b-yyy-zzz-x-a-b-c'        , accepts ].should == true
         @helper[  'en-a-xxx-b-yyy-zzz-x-a-b'          , accepts ].should == true
         @helper[  'en-a-xxx-b-yyy-zzz-www-x-a-b'      , accepts ].should == true
+        @helper[  'en-a-xxx-b-yyy-www-x-a-b'          , accepts ].should == false
         @helper[  'en-a-xxx-b-yyy-zzz-x-a'            , accepts ].should == false
         @helper[  'en-a-xxx-b-yyy'                    , accepts ].should == false
         @helper[  'en-a-xxx-b-yyy-zzz'                , accepts ].should == false

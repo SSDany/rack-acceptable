@@ -2,13 +2,43 @@ require File.expand_path(File.join(File.dirname(__FILE__), '..', 'spec_helper'))
 
 describe Rack::Acceptable::Media do
 
+  include SpecHelpers::FakeRequest
+
   before :all do
-    @_request = Class.new(Rack::Request) { include Rack::Acceptable::Media }
+    fake_request! { include Rack::Acceptable::Media }
   end
 
-  def fake_request(opts = {})
-    env = Rack::MockRequest.env_for('/', opts)
-    @_request.new(env)
+  describe "methods" do
+
+    before :each do
+      @request = fake_request('HTTP_ACCEPT' => '*/*')
+    end
+
+    it "provides the #acceptable_media_ranges method" do
+      @request.should respond_to :acceptable_media_ranges
+      lambda { @request.acceptable_media_ranges }.should_not raise_error
+    end
+
+    it "provides the #acceptable_media method" do
+      @request.should respond_to :acceptable_media
+      lambda { @request.acceptable_media }.should_not raise_error
+    end
+
+    it "provides the #accept_media? method" do
+      @request.should respond_to :accept_media?
+      lambda { @request.accept_media?('text/xml') }.should_not raise_error
+    end
+
+    it "provides the #preferred_media_from method" do
+      @request.should respond_to :preferred_media_from
+      lambda { @request.preferred_media_from('text/xml','text/plain') }.should_not raise_error
+    end
+
+    it "provides the #best_media_for method" do
+      @request.should respond_to :best_media_for
+      lambda { @request.best_media_for('text/html') }.should_not raise_error
+    end
+
   end
 
   describe "#acceptable_media_ranges" do
