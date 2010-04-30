@@ -1,8 +1,8 @@
 module SpecHelpers
   module FakeRequest
 
-    def fake_request!(&block)
-      @_request = Class.new(Rack::Request,&block)
+    def fake_request!(base = Rack::Request, &block)
+      @_request = block_given? ? Class.new(base, &block) : Class.new(base)
     end
 
     def fake_request(options = {})
