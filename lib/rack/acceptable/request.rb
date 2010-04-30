@@ -7,9 +7,10 @@ module Rack #:nodoc:
     class Request < Rack::Request
 
       include Rack::Acceptable::Headers
-      include Rack::Acceptable::Languages
-      include Rack::Acceptable::Charsets
-      include Rack::Acceptable::Media
+
+      def acceptable_media
+        @_acceptable_media ||= super
+      end
 
       def acceptable_charsets
         @_acceptable_charsets ||= super

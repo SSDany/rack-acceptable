@@ -13,6 +13,7 @@ module Rack #:nodoc:
 
     # request and mixins
     autoload :Headers         , 'rack/acceptable/mixin/headers'
+    autoload :Encodings       , 'rack/acceptable/mixin/encodings'
     autoload :Charsets        , 'rack/acceptable/mixin/charsets'
     autoload :Languages       , 'rack/acceptable/mixin/languages'
     autoload :Media           , 'rack/acceptable/mixin/media'

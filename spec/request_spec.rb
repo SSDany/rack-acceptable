@@ -7,8 +7,8 @@ describe Rack::Acceptable::Request do
     Rack::Acceptable::Request.new(env)
   end
 
-  it "has the Rack::Acceptable::Headers included" do
-    Rack::Acceptable::Request.should include Rack::Acceptable::Headers
+  it "has the Rack::Acceptable::Encodings included" do
+    Rack::Acceptable::Request.should include Rack::Acceptable::Encodings
   end
 
   it "has the Rack::Acceptable::Languages included" do
