@@ -1,6 +1,4 @@
-require 'rubygems'
-require 'rack'
-require 'rack/acceptable'
+require File.expand_path(File.join(File.dirname(__FILE__), '..', 'helper'))
 
 class Request < Rack::Request
   include Rack::Acceptable::Media
@@ -20,7 +18,7 @@ env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/x-json;q=0.9,text/*;q
 request = Request.new(env)
 p request.preferred_media_from('text/x-json','text/css') #=> "text/css"
 
-env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*,text/x-json')
+env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*;q=0.9,text/x-json')
 request = Request.new(env)
 p request.preferred_media_from('text/css','text/x-json') #=> "text/x-json"
 p request.preferred_media_from('text/css','text/x-JSON') #=> "text/x-JSON"
