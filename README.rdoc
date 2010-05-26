@@ -1,4 +1,4 @@
-=== DESCRIPTION:
+== DESCRIPTION:
 
 Provides definitive support for Accept-* headers, strictly compliant with RFC 2616.
 Includes negotiation algorithms for Media-Types, Charsets and Content-Codings.
@@ -14,40 +14,73 @@ Also realizes perfectionistic LanguageTags support with basic/extended filtering
 
 == EXAMPLES:
 
-=== Media
+=== Helpers:
 
-  env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/plain;q=0,text/*')
-  request = Request.new(env)
-  p request.accept_media?('text/css') #=> true
-  p request.accept_media?('text/plain') #=> false
-  p request.accept_media?('video/quicktime') #=> false
+  env = Rack::MockRequest.env_for('/',
+    'HTTP_ACCEPT'           => 'text/*;q=0.8,text/x-json;q=0.8,text/html;p=whatever,image/png;q=0.2',
+    'HTTP_ACCEPT_LANGUAGE'  => 'de-de,sl-nedis',
+    'HTTP_ACCEPT_CHARSET'   => 'utf-8;q=0.9,iso-8859-5;q=0.8'
+    )
 
-  env = Rack::MockRequest.env_for('/','HTTP_ACCEPT' => 'text/*;q=0.8,text/x-json;q=0.8,text/html;p=whatever')
-  request = Request.new(env)
-  p request.preferred_media_from('text/css','text/html') #=> "text/css"
-  p request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever"
-  p request.preferred_media_from('text/x-json','text/html;p=Whatever') #=> "text/x-json" #parameter values are case-sensitive.
+  request = Rack::Acceptable::Request.new(env)
 
-=== LanguageTags
+==== Media:
+
+  request.accept_media?('text/css') #=> true
+  request.accept_media?('text/plain') #=> true
+  request.accept_media?('image/jpeg') #=> false
+  request.accept_media?('image/png') #=> true
+  request.accept_media?('video/quicktime') #=> false
+
+  request.preferred_media_from('text/css','text/html') #=> "text/css"
+  request.preferred_media_from('text/x-json','text/html;p=whatever') #=> "text/html;p=whatever"
+  request.preferred_media_from('text/x-json','text/html;p=Whatever') #=> "text/x-json" #parameter values are case-sensitive.
+
+==== Languages:
+
+  request.accept_language?("de-de") #=> true
+  request.accept_language?("de-DE") #=> true
+  request.accept_language?("de-Latn-de") #=> true
+  request.accept_language?("de-Latf-DE") #=> true
+  request.accept_language?("de-DE-x-goethe") #=> true
+  request.accept_language?("de-Latn-DE-1996") #=> true
+  request.accept_language?("de-Deva-DE") #=> true
+
+  request.accept_language?("de") #=> false
+  request.accept_language?("de-x-DE") #=> false
+  request.accept_language?("de-Deva") #=> false
+
+  request.accept_language?("sl-nedis") #=> true
+  request.accept_language?("sl-Latn-nedis") #=> true
+  request.accept_language?("sl-rozaj") #=> false
+
+==== Charsets:
+
+  request.accept_charset?("utf-8") #=> # true
+  request.accept_charset?("iso-8859-1") #=> # true
+
+  request.preferred_charset_from("utf-8","iso-8859-5") #=> # "utf-8"
+  request.preferred_charset_from("utf-8","iso-8859-1") #=> # "iso-8859-1"
+
+=== LanguageTags:
 
   langtag = Rack::Acceptable::LanguageTag.parse('SL-LATN-ROZAJ')
 
-  p langtag.variants #=> ["rozaj"]
-  p langtag.script #=> "Latn"
+  langtag.variants #=> ["rozaj"]
+  langtag.script #=> "Latn"
 
   # basic filtering (RFC 4647)
-  p langtag.has_prefix?('sl-Latn') #=> true
-  p langtag.matched_by_basic_range?('sl-Latn') #=> true
-  p langtag.has_prefix?('sl-Latn-ro') #=> false
-  p langtag.has_prefix?('sl') #=> true
+  langtag.has_prefix?('sl-Latn') #=> true
+  langtag.matched_by_basic_range?('sl-Latn') #=> true
+  langtag.has_prefix?('sl-Latn-ro') #=> false
+  langtag.has_prefix?('sl') #=> true
 
   # extended filtering (RFC 4647)
-  p langtag.matched_by_extended_range?('*') #=> true
-  p langtag.matched_by_extended_range?('sl-*') #=> true
-  p langtag.matched_by_extended_range?('*-Latn') #=> true
-  p langtag.matched_by_extended_range?('sl-rozaj') #=> true
-  p langtag.matched_by_extended_range?('sl-nedis') #=> false
-
+  langtag.matched_by_extended_range?('*') #=> true
+  langtag.matched_by_extended_range?('sl-*') #=> true
+  langtag.matched_by_extended_range?('*-Latn') #=> true
+  langtag.matched_by_extended_range?('sl-rozaj') #=> true
+  langtag.matched_by_extended_range?('sl-nedis') #=> false
 
 == INSTALLATION:
 
