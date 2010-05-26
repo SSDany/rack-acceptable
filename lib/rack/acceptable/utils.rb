@@ -23,8 +23,8 @@ module Rack #:nodoc:
       if RUBY_VERSION < '1.9.1'
 
         PAIR_SPLITTER       = /\=/.freeze
-        HYPHEN_SPLITTER     = /-/
-        COMMA_SPLITTER      = /,/
+        HYPHEN_SPLITTER     = /-/.freeze
+        COMMA_SPLITTER      = /,/.freeze
         SEMICOLON_SPLITTER  = /;/.freeze
 
       else
@@ -211,6 +211,7 @@ module Rack #:nodoc:
       # use of digits anywhere in the 'language-range' (see [RFC2616errata]).
       #++
 
+      # TODO: move to LanguageTag or Languages
       HTTP_ACCEPT_LANGUAGE_REGEX = /^\s*(\*|[a-z]{1,8}(?:-[a-z\d]{1,8}|-\*)*)#{Utils::QUALITY_PATTERN}\s*$/io.freeze
 
       def normalize_header(header)
