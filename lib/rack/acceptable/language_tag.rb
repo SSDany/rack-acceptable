@@ -52,7 +52,7 @@ module Rack #:nodoc:
       # always remain, invalid.
       #++
 
-      language    = '([a-z]{2,8}|[a-z]{2,3}(?:-[a-z]{3})?)'
+      language    = '([a-z]{2,8}|[a-z]{2,3}(?:-[a-z]{3}){0,3})'
       script      = '(?:-([a-z]{4}))?'
       region      = '(?:-([a-z]{2}|\d{3}))?'
       variants    = '(?:-[a-z\d]{5,8}|-\d[a-z\d]{3})*'
@@ -113,7 +113,7 @@ module Rack #:nodoc:
           region      = $3
           variants    = $4.split(Utils::HYPHEN_SPLITTER)[1..-1]
 
-          primary, extlang = primary.split(Utils::HYPHEN_SPLITTER) if primary.include?(Const::HYPHEN)
+          primary, *extlang = primary.split(Utils::HYPHEN_SPLITTER) if primary.include?(Const::HYPHEN)
           script.capitalize! if script
           region.upcase! if region
 
@@ -173,7 +173,7 @@ module Rack #:nodoc:
       #
       def length
         length =  1 #@primary
-        length += 1 if @extlang
+        length += @extlang.length if @extlang
         length += 1 if @script
         length += 1 if @region
         length += @variants.length if @variants
@@ -189,7 +189,7 @@ module Rack #:nodoc:
 
       def to_a
         ary = [@primary]
-        ary << @extlang if @extlang
+        ary.concat @extlang if @extlang
         ary << @script if @script
         ary << @region if @region
         ary.concat @variants if @variants
@@ -368,7 +368,7 @@ module Rack #:nodoc:
           components  = $'.split(Utils::HYPHEN_SPLITTER)
           components.shift
 
-          @primary, @extlang = @primary.split(Utils::HYPHEN_SPLITTER) if @primary.include?(Const::HYPHEN)
+          @primary, *@extlang = @primary.split(Utils::HYPHEN_SPLITTER) if @primary.include?(Const::HYPHEN)
 
           @script.capitalize! if @script
           @region.upcase! if @region
