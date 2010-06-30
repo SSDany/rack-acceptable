@@ -67,14 +67,14 @@ module Rack #:nodoc:
 
       class << self
 
-        # Checks if the +String+ passed could be treated as 'privateuse' Language-Tag.
+        # Checks if the +String+ passed represents a 'privateuse' Language-Tag.
         # Works case-insensitively.
         #
         def privateuse?(tag)
           PRIVATEUSE_REGEX === tag
         end
 
-        # Checks if the +String+ passed represents a 'grandgathered' Language-Tag.
+        # Checks if the +String+ passed represents a 'grandfathered' Language-Tag.
         # Works case-insensitively.
         #
         def grandfathered?(tag)
@@ -82,13 +82,13 @@ module Rack #:nodoc:
         end
 
         # ==== Parameters
-        # langtag<String>:: The Language-Tag snippet.
+        # langtag<String>:: The LangTag snippet.
         #
         # ==== Returns
         # Array or nil::
-        #   It returns +nil+, when the Language-Tag passed:
+        #   It returns +nil+, when the snipped passed:
         #   * does not conform the Language-Tag ABNF (malformed)
-        #   * grandfathered
+        #   * represents a 'grandfathered' Language-Tag
         #   * starts with 'x' singleton ('privateuse').
         #
         #   Otherwise you'll get an +Array+ with:
@@ -131,17 +131,10 @@ module Rack #:nodoc:
       # Checks if self has a variant passed.
       # Works case-insensitively.
       #
-      # ==== Notes
-      # *Destructively* downcases current set of variants, if necessary.
-      # Just note, that variants are case-insensitive, and 'convenient' form
-      # of the Language-Tag assumes they're in 'lowercase' notation.
-      #
       def has_variant?(variant)
         return false unless @variants
-        @variants.include?(variant) || begin
-          @variants.map { |v| v.downcase! }
-          @variants.include?(variant.downcase)
-        end
+        v = variant.downcase
+        @variants.any? { |var| v == var || v == var.downcase }
       end
 
       # Checks if self has a singleton passed.
@@ -161,7 +154,6 @@ module Rack #:nodoc:
         keys
       end
 
-      # TODO: validate size of components and the primary one (it should not be nil)
       def initialize(*components)
         @primary, @extlang, @script, @region, @variants, @extensions, @privateuse = *components
       end
@@ -176,7 +168,7 @@ module Rack #:nodoc:
 
       attr_reader :tag # the most recent 'build' of tag
 
-      # Returns the number of subtags in the Language-Tag.
+      # Returns the number of subtags in self.
       # Does *not* perform validation or recomposition.
       #
       def length
@@ -341,16 +333,16 @@ module Rack #:nodoc:
 
       # ==== Parameters
       # thing<String, optional>::
-      #   The Language-Tag snippet
+      #   The LangTag snippet
       #
       # ==== Returns
       # +self+
       #
       # ==== Raises
       # ArgumentError::
-      #   The Language-Tag composition:
+      #   The snippet passed:
       #   * does not conform the Language-Tag ABNF (malformed)
-      #   * grandfathered
+      #   * represents a 'grandfathered' Language-Tag
       #   * starts with 'x' singleton ('privateuse').
       #   * contains duplicate variants
       #   * contains duplicate singletons
